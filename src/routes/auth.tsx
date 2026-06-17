@@ -612,6 +612,51 @@ function SubmitButton({ loading, label }: { loading: boolean; label: string }) {
   );
 }
 
+function NameField({
+  id,
+  label,
+  value,
+  onChange,
+  autoComplete,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-ink">{label}</Label>
+      <div className="relative">
+        <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/50" />
+        <Input
+          id={id}
+          type="text"
+          autoComplete={autoComplete}
+          required
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={label}
+          className="border-2 border-ink/80 bg-[var(--kraft)] pl-9 text-ink placeholder:text-ink/40 focus-visible:ring-[var(--teal)]"
+        />
+      </div>
+    </div>
+  );
+}
+
+function _SubmitButtonRemovedDup({ loading, label }: { loading: boolean; label: string }) {
+  return (
+    <Button
+      type="submit"
+      disabled={loading}
+      className="w-full border-2 border-ink bg-ink text-kraft hover:bg-ink/85"
+    >
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : label}
+    </Button>
+  );
+}
+
 function OtpForm({
   value,
   onChange,
