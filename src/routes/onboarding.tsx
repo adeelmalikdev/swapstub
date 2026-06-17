@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, X, Camera } from "lucide-react";
+import { ArrowLeft, Plus, X, Camera, Check, Loader2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { saveOnboarding } from "@/lib/profile.functions";
+import { saveOnboarding, checkUsernameAvailable } from "@/lib/profile.functions";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -63,6 +63,29 @@ function detectTimezone(): string {
   } catch {
     return "UTC";
   }
+}
+
+const FALLBACK_TIMEZONES = [
+  "UTC","Pacific/Honolulu","America/Anchorage","America/Los_Angeles","America/Denver",
+  "America/Phoenix","America/Chicago","America/Mexico_City","America/New_York",
+  "America/Toronto","America/Halifax","America/Sao_Paulo","America/Argentina/Buenos_Aires",
+  "Atlantic/Azores","Europe/London","Europe/Dublin","Europe/Lisbon","Europe/Paris",
+  "Europe/Berlin","Europe/Madrid","Europe/Rome","Europe/Amsterdam","Europe/Stockholm",
+  "Europe/Athens","Europe/Istanbul","Europe/Moscow","Africa/Lagos","Africa/Cairo",
+  "Africa/Johannesburg","Asia/Dubai","Asia/Tehran","Asia/Karachi","Asia/Kolkata",
+  "Asia/Kathmandu","Asia/Dhaka","Asia/Bangkok","Asia/Jakarta","Asia/Singapore",
+  "Asia/Hong_Kong","Asia/Shanghai","Asia/Taipei","Asia/Tokyo","Asia/Seoul",
+  "Australia/Perth","Australia/Adelaide","Australia/Sydney","Pacific/Auckland",
+];
+
+function getTimezoneList(): string[] {
+  try {
+    const fn = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf;
+    if (typeof fn === "function") return fn("timeZone");
+  } catch {
+    // ignore
+  }
+  return FALLBACK_TIMEZONES;
 }
 
 function OnboardingPage() {
@@ -350,6 +373,50 @@ function ProfileStep({
   timezone: string;
   setTimezone: (v: string) => void;
 }) {
+  const timezones = useMemo(() => getTimezoneList(), []);
+  const [unameStatus, setUnameStatus] = useState<
+    "idle" | "checking" | "available" | "taken" | "invalid" | "error"
+  >("idle");
+
+  useEffect(() => {
+    const trimmed = username.trim();
+    if (!trimmed) {
+      setUnameStatus("idle");
+      return;
+    }
+    if (!/^[a-zA-Z0-9_]{2,32}$/.test(trimmed)) {
+      setUnameStatus("invalid");
+      return;
+    }
+    setUnameStatus("checking");
+    const handle = setTimeout(async () => {
+      try {
+        const res = await checkUsernameAvailable({ data: { username: trimmed } });
+        setUnameStatus(res.available ? "available" : "taken");
+      } catch {
+        setUnameStatus("error");
+      }
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [username]);
+
+  const unameMessage =
+    unameStatus === "invalid"
+      ? "2–32 chars · letters, numbers, underscore"
+      : unameStatus === "taken"
+        ? "That username is taken"
+        : unameStatus === "available"
+          ? "Available"
+          : unameStatus === "error"
+            ? "Couldn't check right now"
+            : "";
+  const unameColor =
+    unameStatus === "available"
+      ? "text-emerald-700"
+      : unameStatus === "taken" || unameStatus === "invalid"
+        ? "text-red-600"
+        : "text-[#7a7164]";
+
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-4">
@@ -365,14 +432,31 @@ function ProfileStep({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <FieldLabel>Username</FieldLabel>
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value.toLowerCase())}
-            type="text"
-            placeholder="@student_pro"
-            className={inputClass}
-            maxLength={32}
-          />
+          <div className="relative">
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value.toLowerCase())}
+              type="text"
+              placeholder="student_pro"
+              className={inputClass + " pr-9"}
+              maxLength={32}
+              autoComplete="off"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2">
+              {unameStatus === "checking" && (
+                <Loader2 className="w-4 h-4 text-[#7a7164] animate-spin" />
+              )}
+              {unameStatus === "available" && (
+                <Check className="w-4 h-4 text-emerald-600" />
+              )}
+              {(unameStatus === "taken" || unameStatus === "invalid") && (
+                <X className="w-4 h-4 text-red-600" />
+              )}
+            </span>
+          </div>
+          {unameMessage && (
+            <p className={`text-[10px] ${unameColor}`}>{unameMessage}</p>
+          )}
         </div>
         <div className="space-y-1.5">
           <FieldLabel>Display name</FieldLabel>
@@ -402,13 +486,20 @@ function ProfileStep({
 
       <div className="space-y-1.5">
         <FieldLabel>Timezone</FieldLabel>
-        <input
+        <select
           value={timezone}
           onChange={(e) => setTimezone(e.target.value)}
-          type="text"
-          placeholder="America/New_York"
-          className={inputClass}
-        />
+          className={inputClass + " appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%237a7164%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polyline points=%226 9 12 15 18 9%22/></svg>')] bg-no-repeat bg-[right_1rem_center] pr-10"}
+        >
+          {!timezones.includes(timezone) && timezone && (
+            <option value={timezone}>{timezone}</option>
+          )}
+          {timezones.map((tz) => (
+            <option key={tz} value={tz}>
+              {tz.replace(/_/g, " ")}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );
