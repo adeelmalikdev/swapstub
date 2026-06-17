@@ -12,7 +12,8 @@ const NAV = [
   { label: "Profile", to: "/dashboard" },
 ] as const;
 
-function isActive(pathname: string, to: string) {
+function isActive(pathname: string, to: string, label: string) {
+  if (to === "/dashboard" && label !== "Dashboard") return false;
   if (to === "/dashboard") return pathname === "/dashboard";
   if (to === "/listings")
     return pathname === "/listings" || pathname.startsWith("/listings/");
