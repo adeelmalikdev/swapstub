@@ -21,6 +21,7 @@ import { Route as ListingsIndexRouteImport } from './routes/listings.index'
 import { Route as UUsernameRouteImport } from './routes/u.$username'
 import { Route as ListingsNewRouteImport } from './routes/listings.new'
 import { Route as ListingsIdRouteImport } from './routes/listings.$id'
+import { Route as ListingsIdEditRouteImport } from './routes/listings.$id.edit'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -82,6 +83,11 @@ const ListingsIdRoute = ListingsIdRouteImport.update({
   path: '/listings/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ListingsIdEditRoute = ListingsIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => ListingsIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -92,10 +98,11 @@ export interface FileRoutesByFullPath {
   '/messages': typeof MessagesRoute
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
-  '/listings/$id': typeof ListingsIdRoute
+  '/listings/$id': typeof ListingsIdRouteWithChildren
   '/listings/new': typeof ListingsNewRoute
   '/u/$username': typeof UUsernameRoute
   '/listings/': typeof ListingsIndexRoute
+  '/listings/$id/edit': typeof ListingsIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -106,10 +113,11 @@ export interface FileRoutesByTo {
   '/messages': typeof MessagesRoute
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
-  '/listings/$id': typeof ListingsIdRoute
+  '/listings/$id': typeof ListingsIdRouteWithChildren
   '/listings/new': typeof ListingsNewRoute
   '/u/$username': typeof UUsernameRoute
   '/listings': typeof ListingsIndexRoute
+  '/listings/$id/edit': typeof ListingsIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -121,10 +129,11 @@ export interface FileRoutesById {
   '/messages': typeof MessagesRoute
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
-  '/listings/$id': typeof ListingsIdRoute
+  '/listings/$id': typeof ListingsIdRouteWithChildren
   '/listings/new': typeof ListingsNewRoute
   '/u/$username': typeof UUsernameRoute
   '/listings/': typeof ListingsIndexRoute
+  '/listings/$id/edit': typeof ListingsIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/listings/new'
     | '/u/$username'
     | '/listings/'
+    | '/listings/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/listings/new'
     | '/u/$username'
     | '/listings'
+    | '/listings/$id/edit'
   id:
     | '__root__'
     | '/'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/listings/new'
     | '/u/$username'
     | '/listings/'
+    | '/listings/$id/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -180,7 +192,7 @@ export interface RootRouteChildren {
   MessagesRoute: typeof MessagesRoute
   OnboardingRoute: typeof OnboardingRoute
   SettingsRoute: typeof SettingsRoute
-  ListingsIdRoute: typeof ListingsIdRoute
+  ListingsIdRoute: typeof ListingsIdRouteWithChildren
   ListingsNewRoute: typeof ListingsNewRoute
   UUsernameRoute: typeof UUsernameRoute
   ListingsIndexRoute: typeof ListingsIndexRoute
@@ -272,8 +284,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListingsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/listings/$id/edit': {
+      id: '/listings/$id/edit'
+      path: '/edit'
+      fullPath: '/listings/$id/edit'
+      preLoaderRoute: typeof ListingsIdEditRouteImport
+      parentRoute: typeof ListingsIdRoute
+    }
   }
 }
+
+interface ListingsIdRouteChildren {
+  ListingsIdEditRoute: typeof ListingsIdEditRoute
+}
+
+const ListingsIdRouteChildren: ListingsIdRouteChildren = {
+  ListingsIdEditRoute: ListingsIdEditRoute,
+}
+
+const ListingsIdRouteWithChildren = ListingsIdRoute._addFileChildren(
+  ListingsIdRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -284,7 +315,7 @@ const rootRouteChildren: RootRouteChildren = {
   MessagesRoute: MessagesRoute,
   OnboardingRoute: OnboardingRoute,
   SettingsRoute: SettingsRoute,
-  ListingsIdRoute: ListingsIdRoute,
+  ListingsIdRoute: ListingsIdRouteWithChildren,
   ListingsNewRoute: ListingsNewRoute,
   UUsernameRoute: UUsernameRoute,
   ListingsIndexRoute: ListingsIndexRoute,
