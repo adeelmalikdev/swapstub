@@ -1,75 +1,46 @@
+## Goal
 
-# SwapStub — Page-by-Page Build Plan
+Make sign-in (and signup) route the user based on whether their profile is complete, instead of always going to `/`.
 
-Build the torn-ticket-themed Skill-Swap Marketplace one page at a time. After each page is delivered, you test it in the preview; once you approve, I move to the next page. No hardcoded/mock data anywhere — every page reads from Lovable Cloud. Every screen is fully responsive (mobile → tablet → desktop). Auth uses **6-digit email OTP** for both signup verification and password reset.
+- Profile incomplete (`profiles.onboarded = false` or no profile row) → `/onboarding`
+- Profile complete (`profiles.onboarded = true`) → `/dashboard`
 
-## Global foundations (built once, before Page 1)
+`/dashboard` doesn't exist yet, so add a placeholder route (same style as the current `/onboarding` placeholder).
 
-These are not user-visible pages but are needed before any page works:
+## Changes
 
-- Design tokens in `src/styles.css`: kraft tan `#EDE6D6`, ink `#2E2B26`, ochre `#C68A2E`, teal `#3B6F5E`, brick `#9C5B3C`.
-- Fonts via `<link>` in `__root.tsx`: slab serif display (Alfa Slab One), humanist sans (Work Sans), mono (JetBrains Mono).
-- `<TicketStub>` primitive (SVG perforation, two halves), `<PerforatedDivider>`, `<TicketCode>` mono badge.
-- Lovable Cloud enabled; full database schema migrated (profiles, categories, listings, bookings, reviews, message_threads, messages, user_roles + has_role); RLS + GRANTs; auto-profile trigger; ticket-code generator.
-- Email infrastructure provisioned (domain, queue, cron) for OTP and notification emails.
-- Responsive shell: top nav on desktop/tablet, bottom tab bar on mobile.
+### 1. New server function: `getPostAuthDestination`
+File: `src/lib/profile.functions.ts` (new)
 
-## Build order (one page per round)
+- `createServerFn` with `requireSupabaseAuth` middleware.
+- Reads `profiles.onboarded` for `context.userId`.
+- Returns `"/onboarding"` if no row or `onboarded === false`, else `"/dashboard"`.
 
-After each round I stop, you test, then say "next" (or give feedback first).
+### 2. `src/routes/auth.tsx`
+- Replace the hard-coded `postAuthRedirectRef.current = "/"` / `"/onboarding"` logic with a single helper that:
+  1. Calls `getPostAuthDestination` after a successful sign-in / verify.
+  2. Navigates to the returned path.
+- Update both flows:
+  - `handleSignin` → after `signInWithPassword` succeeds, resolve destination and navigate.
+  - `handleVerifySignup` → same (replaces the current hard-coded `/onboarding`).
+- The `onAuthStateChange` listener keeps its current behavior as a fallback (defaults to `/` only if no explicit destination was set), but the explicit handlers above own the redirect so there's no flicker.
+- Initial "already signed in" check in the `useEffect` also resolves destination instead of going to `/`.
 
-### Page 1 — Landing (`/`)
-Hero with an oversized animated torn ticket ("I can teach ___ / I want to learn ___"), how-it-works (3 perforated steps), live counters pulled from the DB (active listings, swaps completed, members), featured categories pulled from the `categories` table, footer. CTA: Browse / Sign up. **No hardcoded copy data** — counters and categories query the DB.
+### 3. `/onboarding` (existing placeholder)
+- Change the "Continue to home" button to "Continue to dashboard" → `/dashboard`.
+- Add a "Mark as complete" action (optional, see Question 1) that sets `profiles.onboarded = true` via a small server fn, then navigates to `/dashboard`. This lets the placeholder actually exit the onboarding loop during testing.
 
-### Page 2 — Auth (`/auth`)
-Sign up + Sign in tabs. **Email + password with 6-digit OTP verification**:
-- Sign up → account created → OTP code emailed → user enters code → verified.
-- Sign in → password.
-- "Forgot password?" → email entered → OTP emailed → user enters code → sets new password.
-- Resend OTP with cooldown; rate-limited; OTP expires in 10 min.
-Branded OTP email template using the ticket motif. Fully responsive.
+### 4. New placeholder route: `src/routes/dashboard.tsx`
+- Top-level route (we don't have an `_authenticated` layout yet, so it self-guards by calling `supabase.auth.getUser()` client-side and redirecting to `/auth` if signed out — same pattern as the existing `/onboarding` page, for consistency).
+- Simple placeholder card: "Dashboard — coming soon", with sign-out button. Same visual style as `/onboarding`.
+- Sets `head()` meta with `noindex` since it's user-only.
 
-### Page 3 — Onboarding (`/onboarding`)
-First-login wizard (3 perforated steps): username + display name → avatar upload (Lovable Storage) + bio + timezone → pick categories you can teach / want to learn. Writes to `profiles`. Skippable steps allowed but required before creating a listing.
+## Technical notes
 
-### Page 4 — Browse (`/browse`)
-Search bar + filter rail (offered category, wanted category, min rating, availability day). Results as torn-ticket cards in a responsive grid. Filters live in the URL (`validateSearch`). Pagination / infinite scroll. All data from `listings` + joins; zero placeholders.
+- `getPostAuthDestination` uses `requireSupabaseAuth`, so `attachSupabaseAuth` must already be wired in `src/start.ts` (it is — existing OTP fns use it).
+- Profile row may not exist for users created via the custom OTP flow (no signup trigger guaranteed). The function treats "missing row" as "not onboarded" → `/onboarding`, which is the safe default.
+- No DB migration needed — `profiles.onboarded` already exists.
 
-### Page 5 — Listing detail (`/listing/$id`)
-Full-size ticket with offered/wanted halves, host profile snippet, host's rating, ticket code, availability, "Request a swap" CTA opening a scheduling modal.
+## Question
 
-### Page 6 — Public profile (`/u/$username`)
-Avatar, bio, skills offered, skills wanted, listings, reviews, average rating. All from DB.
-
-### Page 7 — Create / edit listing (`/_authenticated/listings/new` + `/edit`)
-Form with two columns mirroring the ticket halves. Validation via Zod. Generates ticket code on insert.
-
-### Page 8 — Dashboard (`/_authenticated/dashboard`)
-My listings, my upcoming bookings, pending requests, recent reviews, and a "Perfect swaps for you" matching strip (computed server-side: two-way > one-way match).
-
-### Page 9 — Bookings inbox + detail (`/_authenticated/bookings`, `/$id`)
-Pending / Upcoming / Past tabs. Accept / decline / cancel / mark completed. Booking detail shows the thread and (once status = `completed`) unlocks the review form.
-
-### Page 10 — Reviews
-Inline on booking detail page. Insert blocked by RLS unless `booking.status = completed` and reviewer was a participant. Average rating recomputed for display.
-
-### Page 11 — Messages (`/_authenticated/messages`, `/$threadId`)
-Realtime chat (Supabase channel). Thread auto-created on booking request or two-way match. Unread badge in nav.
-
-### Page 12 — Profile settings (`/_authenticated/profile`)
-Edit display name, bio, avatar, timezone, skills, password change (via OTP), sign out.
-
-### Page 13 — Email notifications
-React Email templates for: OTP verify, OTP reset, booking request, accept/decline, 24h reminder (pg_cron), new review. Each branded with the ticket motif.
-
-### Page 14 — Launch polish
-SEO `head()` per route, OG image (torn ticket), favicon, 404 page (torn/ripped ticket), error boundaries, accessibility pass, final responsive audit, publish.
-
-## Ground rules for every page
-
-- **No hardcoded data.** All content from Lovable Cloud (DB / storage / auth). Empty states use real empty queries.
-- **Responsive.** Each page is verified at mobile (375), tablet (768), and desktop (1280+).
-- **Auth-gated routes** live under `_authenticated/` (managed gate).
-- **One page per round.** I deliver, you test, you approve, I continue.
-
-Starting with **Page 1 (Landing)** as soon as you approve this plan.
+1. For the placeholder `/onboarding` page, should I add a "Mark profile complete" button that flips `profiles.onboarded = true` so you can test the `/dashboard` redirect path? Or keep onboarding purely visual for now and leave the flag flip for when the real onboarding flow is built?
