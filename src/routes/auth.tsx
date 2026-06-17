@@ -365,7 +365,7 @@ function AuthPage() {
                     confirmValue={confirmPassword}
                     onConfirmChange={setConfirmPassword}
                   />
-                  <SubmitButton loading={loading} label="Send 6-digit code" />
+                  <SubmitButton loading={loading} label="Sign Up" />
                   <p className="text-center text-sm text-ink/70">
                     Already have an account?{" "}
                     <button
@@ -449,6 +449,12 @@ function EmailField({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const [touched, setTouched] = useState(false);
+  const error = useMemo(() => {
+    if (!touched && !value) return null;
+    const res = emailSchema.safeParse(value);
+    return res.success ? null : res.error.issues[0].message;
+  }, [value, touched]);
   return (
     <div className="space-y-1.5">
       <Label htmlFor="email" className="text-ink">
@@ -464,10 +470,12 @@ function EmailField({
           required
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="you@university.edu"
+          onBlur={() => setTouched(true)}
+          placeholder="yourmail@example.com"
           className="border-2 border-ink/80 bg-[var(--kraft)] pl-9 text-ink placeholder:text-ink/40 focus-visible:ring-[var(--teal)]"
         />
       </div>
+      {error && <p className="text-xs text-red-700">{error}</p>}
     </div>
   );
 }
