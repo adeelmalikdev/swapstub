@@ -171,5 +171,24 @@ export const sendMessage = createServerFn({ method: "POST" })
       .update({ last_message_at: new Date().toISOString() })
       .eq("id", t.id);
 
+    // Fire-and-forget notification + email to the other participant.
+    const otherId = t.user_a === userId ? t.user_b : t.user_a;
+    try {
+      const { data: me } = await supabase
+        .from("profiles")
+        .select("display_name, username")
+        .eq("id", userId)
+        .maybeSingle();
+      const { notifyNewMessage } = await import("./notify.server");
+      void notifyNewMessage({
+        recipientUserId: otherId,
+        senderName: me?.display_name || me?.username || "Someone",
+        preview: data.body,
+        threadId: t.id,
+      });
+    } catch (e) {
+      console.warn("[messages] notify failed", e);
+    }
+
     return { id: msg.id, body: msg.body, fromMe: true, createdAt: msg.created_at };
   });

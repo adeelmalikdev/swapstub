@@ -287,14 +287,13 @@ function ListingRow({
             </>
           )}
         </button>
-        <button
-          type="button"
-          disabled
-          title="Editing coming soon"
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[#bdaf9c] cursor-not-allowed"
+        <Link
+          to="/listings/$id/edit"
+          params={{ id: listing.id }}
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[#5a5448] hover:bg-[#ebe2d5]"
         >
           <Pencil className="w-3.5 h-3.5" /> Edit
-        </button>
+        </Link>
         <button
           type="button"
           disabled={busy}

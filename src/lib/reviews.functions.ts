@@ -30,6 +30,21 @@ export const submitReview = createServerFn({ method: "POST" })
       if (error.code === "23505") throw new Error("You already reviewed this swap");
       throw new Error(error.message);
     }
+    try {
+      const { data: me } = await supabase
+        .from("profiles")
+        .select("display_name, username")
+        .eq("id", userId)
+        .maybeSingle();
+      const { notifyReview } = await import("./notify.server");
+      void notifyReview({
+        recipientUserId: data.revieweeId,
+        reviewerName: me?.display_name || me?.username || "Someone",
+        rating: data.rating,
+      });
+    } catch (e) {
+      console.warn("[reviews] notify failed", e);
+    }
     return { ok: true };
   });
 

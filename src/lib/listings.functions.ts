@@ -143,6 +143,25 @@ export const proposeSwap = createServerFn({ method: "POST" })
       .update({ last_message_at: new Date().toISOString() })
       .eq("id", threadId);
 
+    try {
+      const { data: me } = await supabase
+        .from("profiles")
+        .select("display_name, username")
+        .eq("id", userId)
+        .maybeSingle();
+      const senderName = me?.display_name || me?.username || "Someone";
+      const { notifyBookingEvent } = await import("./notify.server");
+      void notifyBookingEvent({
+        recipientUserId: listing.user_id,
+        kind: "booking_proposed",
+        title: `${senderName} proposed a swap`,
+        body: data.message.slice(0, 200),
+        ticketCode: booking.ticket_code,
+      });
+    } catch (e) {
+      console.warn("[propose] notify failed", e);
+    }
+
     return { bookingId: booking.id, ticketCode: booking.ticket_code, threadId };
   });
 

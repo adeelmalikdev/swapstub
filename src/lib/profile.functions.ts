@@ -163,6 +163,7 @@ const onboardingSchema = z.object({
   learnSkills: z.array(z.string().trim().min(1).max(40)).max(12),
   availableDays: z.array(z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"])).max(7),
   sessionLengthMin: z.number().int().min(15).max(240).nullable().optional(),
+  avatarUrl: z.string().url().max(500).nullable().optional(),
 });
 
 export const saveOnboarding = createServerFn({ method: "POST" })
@@ -190,6 +191,7 @@ export const saveOnboarding = createServerFn({ method: "POST" })
     if (data.displayName) patch.display_name = data.displayName;
     if (data.bio !== undefined) patch.bio = data.bio || null;
     if (data.timezone) patch.timezone = data.timezone;
+    if (data.avatarUrl !== undefined) (patch as { avatar_url?: string | null }).avatar_url = data.avatarUrl;
 
     const { error } = await context.supabase
       .from("profiles")
@@ -314,4 +316,59 @@ export const getDashboardData = createServerFn({ method: "GET" })
       explore,
       hasAnyListing: myListings.length > 0,
     };
+  });
+
+export const getMySettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId, claims } = context;
+    const { data, error } = await supabase
+      .from("profiles")
+      .select(
+        "username, display_name, bio, avatar_url, timezone, teach_skills, learn_skills, available_days, session_length_min, email_notify_messages, email_notify_bookings",
+      )
+      .eq("id", userId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return {
+      email: (claims as { email?: string } | null)?.email ?? null,
+      profile: data,
+    };
+  });
+
+const updateProfileSchema = z.object({
+  displayName: z.string().trim().min(1).max(60).optional(),
+  bio: z.string().trim().max(280).nullable().optional(),
+  timezone: z.string().trim().max(64).optional(),
+  teachSkills: z.array(z.string().trim().min(1).max(40)).max(12).optional(),
+  learnSkills: z.array(z.string().trim().min(1).max(40)).max(12).optional(),
+  availableDays: z.array(z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"])).max(7).optional(),
+  sessionLengthMin: z.number().int().min(15).max(240).nullable().optional(),
+  avatarUrl: z.string().url().max(500).nullable().optional(),
+  emailNotifyMessages: z.boolean().optional(),
+  emailNotifyBookings: z.boolean().optional(),
+});
+
+export const updateMyProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => updateProfileSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const patch: Database["public"]["Tables"]["profiles"]["Update"] = {};
+    if (data.displayName !== undefined) patch.display_name = data.displayName;
+    if (data.bio !== undefined) patch.bio = data.bio || null;
+    if (data.timezone !== undefined) patch.timezone = data.timezone;
+    if (data.teachSkills !== undefined) patch.teach_skills = data.teachSkills;
+    if (data.learnSkills !== undefined) patch.learn_skills = data.learnSkills;
+    if (data.availableDays !== undefined) patch.available_days = data.availableDays;
+    if (data.sessionLengthMin !== undefined) patch.session_length_min = data.sessionLengthMin;
+    if (data.avatarUrl !== undefined) patch.avatar_url = data.avatarUrl;
+    if (data.emailNotifyMessages !== undefined) patch.email_notify_messages = data.emailNotifyMessages;
+    if (data.emailNotifyBookings !== undefined) patch.email_notify_bookings = data.emailNotifyBookings;
+    if (Object.keys(patch).length === 0) return { ok: true };
+    const { error } = await context.supabase
+      .from("profiles")
+      .update(patch)
+      .eq("id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });

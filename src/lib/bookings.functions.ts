@@ -125,5 +125,44 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
       .update({ status: nextStatus, updated_at: new Date().toISOString() })
       .eq("id", data.id);
     if (uErr) throw new Error(uErr.message);
+
+    // Notify the other party.
+    try {
+      const otherId = isHost ? b.requester_id : b.host_id;
+      const { data: me } = await supabase
+        .from("profiles")
+        .select("display_name, username")
+        .eq("id", userId)
+        .maybeSingle();
+      const actorName = me?.display_name || me?.username || "Someone";
+      const { data: booking } = await supabase
+        .from("bookings")
+        .select("ticket_code")
+        .eq("id", data.id)
+        .maybeSingle();
+      const titles = {
+        accepted: `${actorName} accepted your swap`,
+        declined: `${actorName} declined your swap`,
+        cancelled: `${actorName} cancelled the swap`,
+        completed: `${actorName} marked the swap as completed`,
+      } as const;
+      const kindMap = {
+        accepted: "booking_accepted",
+        declined: "booking_declined",
+        cancelled: "booking_cancelled",
+        completed: "booking_completed",
+      } as const;
+      const { notifyBookingEvent } = await import("./notify.server");
+      void notifyBookingEvent({
+        recipientUserId: otherId,
+        kind: kindMap[nextStatus as keyof typeof kindMap],
+        title: titles[nextStatus as keyof typeof titles],
+        body: `Stub ${booking?.ticket_code ?? ""} · scheduled ${new Date(b.scheduled_at).toLocaleString()}`,
+        ticketCode: booking?.ticket_code ?? "",
+      });
+    } catch (e) {
+      console.warn("[bookings] notify failed", e);
+    }
+
     return { ok: true, status: nextStatus };
   });
