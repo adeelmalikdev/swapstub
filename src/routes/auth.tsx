@@ -340,12 +340,30 @@ function AuthPage() {
 
               {mode === "signup" && (
                 <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <NameField
+                      id="first-name"
+                      label="First name"
+                      value={firstName}
+                      onChange={setFirstName}
+                      autoComplete="given-name"
+                    />
+                    <NameField
+                      id="last-name"
+                      label="Last name"
+                      value={lastName}
+                      onChange={setLastName}
+                      autoComplete="family-name"
+                    />
+                  </div>
                   <EmailField value={email} onChange={setEmail} />
                   <PasswordField
                     value={password}
                     onChange={setPassword}
                     autoComplete="new-password"
-                    hint="8+ characters"
+                    showRules
+                    confirmValue={confirmPassword}
+                    onConfirmChange={setConfirmPassword}
                   />
                   <SubmitButton loading={loading} label="Send 6-digit code" />
                   <p className="text-center text-sm text-ink/70">
@@ -403,7 +421,11 @@ function AuthPage() {
                     onChange={setNewPassword}
                     autoComplete="new-password"
                     label="New password"
-                    hint="8+ characters"
+                    id="new-password"
+                    showRules
+                    confirmValue={confirmNewPassword}
+                    onConfirmChange={setConfirmNewPassword}
+                    confirmLabel="Confirm new password"
                   />
                   <SubmitButton loading={loading} label="Update password" />
                 </form>
