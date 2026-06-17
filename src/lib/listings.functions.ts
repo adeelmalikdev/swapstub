@@ -341,7 +341,9 @@ export const updateListing = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => updateListingSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const patch: Record<string, unknown> = {};
+    const patch: Database["public"]["Tables"]["listings"]["Update"] = {
+      updated_at: new Date().toISOString(),
+    };
     if (data.offeredSkill !== undefined) patch.offered_skill = data.offeredSkill;
     if (data.wantedSkill !== undefined) patch.wanted_skill = data.wantedSkill;
     if (data.offeredCategoryId !== undefined) patch.offered_category_id = data.offeredCategoryId;
@@ -354,7 +356,6 @@ export const updateListing = createServerFn({ method: "POST" })
         sessionLengthMin: data.sessionLengthMin ?? null,
       };
     }
-    patch.updated_at = new Date().toISOString();
     const { error } = await supabase
       .from("listings")
       .update(patch)
