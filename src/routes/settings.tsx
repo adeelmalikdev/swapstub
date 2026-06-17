@@ -63,7 +63,7 @@ function SettingsPage() {
     enabled: !!userId,
   });
 
-  if (!userId || !q.data) {
+  if (!userId || !q.data || !q.data.profile) {
     return (
       <AppShell>
         <div className="text-center py-16 text-[#7a7164] text-sm">Loading…</div>
@@ -71,6 +71,7 @@ function SettingsPage() {
     );
   }
 
+  const profile = q.data.profile;
   return (
     <AppShell>
       <div className="mb-6">
@@ -81,12 +82,12 @@ function SettingsPage() {
         <div className="space-y-6">
           <ProfileCard
             userId={userId}
-            initial={q.data.profile}
+            initial={profile}
             onSaved={() => qc.invalidateQueries({ queryKey: ["my-settings"] })}
             save={(patch) => saveFn({ data: patch })}
           />
           <NotificationsCard
-            initial={q.data.profile}
+            initial={profile}
             onSaved={() => qc.invalidateQueries({ queryKey: ["my-settings"] })}
             save={(patch) => saveFn({ data: patch })}
           />

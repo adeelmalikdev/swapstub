@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as DiscoverRouteImport } from './routes/discover'
@@ -21,6 +22,11 @@ import { Route as UUsernameRouteImport } from './routes/u.$username'
 import { Route as ListingsNewRouteImport } from './routes/listings.new'
 import { Route as ListingsIdRouteImport } from './routes/listings.$id'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/discover': typeof DiscoverRoute
   '/messages': typeof MessagesRoute
   '/onboarding': typeof OnboardingRoute
+  '/settings': typeof SettingsRoute
   '/listings/$id': typeof ListingsIdRoute
   '/listings/new': typeof ListingsNewRoute
   '/u/$username': typeof UUsernameRoute
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/discover': typeof DiscoverRoute
   '/messages': typeof MessagesRoute
   '/onboarding': typeof OnboardingRoute
+  '/settings': typeof SettingsRoute
   '/listings/$id': typeof ListingsIdRoute
   '/listings/new': typeof ListingsNewRoute
   '/u/$username': typeof UUsernameRoute
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/discover': typeof DiscoverRoute
   '/messages': typeof MessagesRoute
   '/onboarding': typeof OnboardingRoute
+  '/settings': typeof SettingsRoute
   '/listings/$id': typeof ListingsIdRoute
   '/listings/new': typeof ListingsNewRoute
   '/u/$username': typeof UUsernameRoute
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/discover'
     | '/messages'
     | '/onboarding'
+    | '/settings'
     | '/listings/$id'
     | '/listings/new'
     | '/u/$username'
@@ -140,6 +150,7 @@ export interface FileRouteTypes {
     | '/discover'
     | '/messages'
     | '/onboarding'
+    | '/settings'
     | '/listings/$id'
     | '/listings/new'
     | '/u/$username'
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
     | '/discover'
     | '/messages'
     | '/onboarding'
+    | '/settings'
     | '/listings/$id'
     | '/listings/new'
     | '/u/$username'
@@ -167,6 +179,7 @@ export interface RootRouteChildren {
   DiscoverRoute: typeof DiscoverRoute
   MessagesRoute: typeof MessagesRoute
   OnboardingRoute: typeof OnboardingRoute
+  SettingsRoute: typeof SettingsRoute
   ListingsIdRoute: typeof ListingsIdRoute
   ListingsNewRoute: typeof ListingsNewRoute
   UUsernameRoute: typeof UUsernameRoute
@@ -175,6 +188,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -263,6 +283,7 @@ const rootRouteChildren: RootRouteChildren = {
   DiscoverRoute: DiscoverRoute,
   MessagesRoute: MessagesRoute,
   OnboardingRoute: OnboardingRoute,
+  SettingsRoute: SettingsRoute,
   ListingsIdRoute: ListingsIdRoute,
   ListingsNewRoute: ListingsNewRoute,
   UUsernameRoute: UUsernameRoute,
