@@ -46,7 +46,17 @@ export const saveOnboarding = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => onboardingSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = {
+    const patch: {
+      teach_skills: string[];
+      learn_skills: string[];
+      available_days: string[];
+      session_length_min: number | null;
+      onboarded: boolean;
+      username?: string;
+      display_name?: string;
+      bio?: string | null;
+      timezone?: string;
+    } = {
       teach_skills: data.teachSkills,
       learn_skills: data.learnSkills,
       available_days: data.availableDays,
