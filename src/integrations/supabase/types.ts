@@ -254,6 +254,39 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          link: string | null
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          link?: string | null
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string | null
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           available_days: string[]
@@ -261,6 +294,8 @@ export type Database = {
           bio: string | null
           created_at: string
           display_name: string | null
+          email_notify_bookings: boolean
+          email_notify_messages: boolean
           id: string
           learn_skills: string[]
           onboarded: boolean
@@ -276,6 +311,8 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          email_notify_bookings?: boolean
+          email_notify_messages?: boolean
           id: string
           learn_skills?: string[]
           onboarded?: boolean
@@ -291,6 +328,8 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          email_notify_bookings?: boolean
+          email_notify_messages?: boolean
           id?: string
           learn_skills?: string[]
           onboarded?: boolean
