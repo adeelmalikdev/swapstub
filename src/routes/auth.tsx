@@ -456,32 +456,124 @@ function PasswordField({
   autoComplete,
   label = "Password",
   hint,
+  id = "password",
+  showRules = false,
+  confirmValue,
+  onConfirmChange,
+  confirmLabel = "Confirm password",
 }: {
   value: string;
   onChange: (v: string) => void;
   autoComplete: string;
   label?: string;
   hint?: string;
+  id?: string;
+  showRules?: boolean;
+  confirmValue?: string;
+  onConfirmChange?: (v: string) => void;
+  confirmLabel?: string;
 }) {
+  const [show, setShow] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const passed = passwordRules.filter((r) => r.test(value)).length;
+  const strength = value.length === 0 ? 0 : passed;
+  const strengthLabel =
+    strength <= 1 ? "Weak" : strength <= 3 ? "Fair" : strength === 4 ? "Strong" : "Excellent";
+  const strengthColor =
+    strength <= 1
+      ? "var(--brick)"
+      : strength <= 3
+        ? "var(--ochre)"
+        : "var(--teal)";
+  const mismatch =
+    showRules && confirmValue !== undefined && confirmValue.length > 0 && confirmValue !== value;
   return (
-    <div className="space-y-1.5">
-      <Label htmlFor="password" className="text-ink">
-        {label}
-      </Label>
-      <div className="relative">
-        <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/50" />
-        <Input
-          id="password"
-          type="password"
-          autoComplete={autoComplete}
-          required
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="••••••••"
-          className="border-2 border-ink/80 bg-[var(--kraft)] pl-9 text-ink placeholder:text-ink/40 focus-visible:ring-[var(--teal)]"
-        />
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <Label htmlFor={id} className="text-ink">{label}</Label>
+        <div className="relative">
+          <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/50" />
+          <Input
+            id={id}
+            type={show ? "text" : "password"}
+            autoComplete={autoComplete}
+            required
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="••••••••"
+            className="border-2 border-ink/80 bg-[var(--kraft)] pl-9 pr-10 text-ink placeholder:text-ink/40 focus-visible:ring-[var(--teal)]"
+          />
+          <button
+            type="button"
+            onClick={() => setShow((s) => !s)}
+            aria-label={show ? "Hide password" : "Show password"}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-ink/60 hover:text-ink"
+          >
+            {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+        {hint && !showRules && <p className="text-xs text-ink/60">{hint}</p>}
       </div>
-      {hint && <p className="text-xs text-ink/60">{hint}</p>}
+
+      {showRules && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full border border-ink/30 bg-[var(--kraft-deep)]">
+              <div
+                className="h-full transition-all"
+                style={{ width: `${(strength / 5) * 100}%`, backgroundColor: strengthColor }}
+              />
+            </div>
+            <span className="font-mono text-[10px] uppercase tracking-wider text-ink/70">
+              {value.length === 0 ? "—" : strengthLabel}
+            </span>
+          </div>
+          <ul className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+            {passwordRules.map((r) => {
+              const ok = r.test(value);
+              return (
+                <li
+                  key={r.id}
+                  className={`flex items-center gap-1.5 text-xs ${ok ? "text-[var(--teal)]" : "text-ink/60"}`}
+                >
+                  {ok ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                  <span>{r.label}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {onConfirmChange && (
+        <div className="space-y-1.5">
+          <Label htmlFor={`${id}-confirm`} className="text-ink">{confirmLabel}</Label>
+          <div className="relative">
+            <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/50" />
+            <Input
+              id={`${id}-confirm`}
+              type={showConfirm ? "text" : "password"}
+              autoComplete={autoComplete}
+              required
+              value={confirmValue ?? ""}
+              onChange={(e) => onConfirmChange(e.target.value)}
+              placeholder="••••••••"
+              className={`border-2 bg-[var(--kraft)] pl-9 pr-10 text-ink placeholder:text-ink/40 focus-visible:ring-[var(--teal)] ${
+                mismatch ? "border-[var(--brick)]" : "border-ink/80"
+              }`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm((s) => !s)}
+              aria-label={showConfirm ? "Hide password" : "Show password"}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-ink/60 hover:text-ink"
+            >
+              {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {mismatch && <p className="text-xs text-[var(--brick)]">Passwords don't match</p>}
+        </div>
+      )}
     </div>
   );
 }
