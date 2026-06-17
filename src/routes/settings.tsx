@@ -101,7 +101,18 @@ function SettingsPage() {
 }
 
 type ProfileRow = NonNullable<Awaited<ReturnType<typeof getMySettings>>["profile"]>;
-type SavePatch = Parameters<typeof updateMyProfile>[0]["data"];
+type SavePatch = {
+  displayName?: string;
+  bio?: string | null;
+  timezone?: string;
+  teachSkills?: string[];
+  learnSkills?: string[];
+  availableDays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+  sessionLengthMin?: number | null;
+  avatarUrl?: string | null;
+  emailNotifyMessages?: boolean;
+  emailNotifyBookings?: boolean;
+};
 
 function Card({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
