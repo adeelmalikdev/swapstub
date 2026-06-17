@@ -645,18 +645,6 @@ function NameField({
   );
 }
 
-function _SubmitButtonRemovedDup({ loading, label }: { loading: boolean; label: string }) {
-  return (
-    <Button
-      type="submit"
-      disabled={loading}
-      className="w-full border-2 border-ink bg-ink text-kraft hover:bg-ink/85"
-    >
-      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : label}
-    </Button>
-  );
-}
-
 function OtpForm({
   value,
   onChange,
