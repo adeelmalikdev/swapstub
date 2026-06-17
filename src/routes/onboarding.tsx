@@ -371,6 +371,9 @@ function ProfileStep({
   setBio,
   timezone,
   setTimezone,
+  userId,
+  avatarUrl,
+  setAvatarUrl,
 }: {
   username: string;
   setUsername: (v: string) => void;
@@ -380,6 +383,9 @@ function ProfileStep({
   setBio: (v: string) => void;
   timezone: string;
   setTimezone: (v: string) => void;
+  userId: string | null;
+  avatarUrl: string | null;
+  setAvatarUrl: (v: string | null) => void;
 }) {
   const timezones = useMemo(() => getTimezoneList(), []);
   const [unameStatus, setUnameStatus] = useState<
