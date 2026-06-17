@@ -2,34 +2,31 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { markProfileOnboarded } from "@/lib/profile.functions";
-import { toast } from "sonner";
 
-export const Route = createFileRoute("/onboarding")({
+export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Welcome to SwapStub — Onboarding" },
-      { name: "description", content: "Set up your SwapStub profile and start swapping skills." },
+      { title: "Dashboard — SwapStub" },
+      { name: "description", content: "Your SwapStub dashboard." },
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: OnboardingPage,
+  component: DashboardPage,
 });
 
-function OnboardingPage() {
+function DashboardPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState<string | null>(null);
-  const [completing, setCompleting] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getUser().then(({ data }) => {
       if (!mounted) return;
-      if (!data.session) {
+      if (!data.user) {
         navigate({ to: "/auth", replace: true });
         return;
       }
-      setEmail(data.session.user.email ?? null);
+      setEmail(data.user.email ?? null);
     });
     return () => {
       mounted = false;
@@ -41,32 +38,17 @@ function OnboardingPage() {
       <div className="max-w-xl w-full rounded-2xl border border-border bg-card p-10 shadow-sm text-center space-y-6">
         <div className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
           <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-          Onboarding
+          Dashboard
         </div>
-        <h1 className="text-3xl font-bold tracking-tight">Welcome to SwapStub{email ? `, ${email}` : ""}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Welcome back{email ? `, ${email}` : ""}
+        </h1>
         <p className="text-muted-foreground">
-          Your ticket is verified. This is a placeholder onboarding screen — the
-          full flow (profile, skills, interests) is coming soon.
+          This is a placeholder dashboard. Your listings, bookings, and messages
+          will live here once the screens are built.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-          <Button
-            disabled={completing}
-            onClick={async () => {
-              setCompleting(true);
-              try {
-                await markProfileOnboarded();
-                toast.success("Profile marked complete");
-                navigate({ to: "/dashboard", replace: true });
-              } catch (err) {
-                toast.error(err instanceof Error ? err.message : "Couldn't update profile");
-              } finally {
-                setCompleting(false);
-              }
-            }}
-          >
-            {completing ? "Finishing…" : "Mark complete & continue"}
-          </Button>
-          <Button asChild variant="ghost">
+          <Button asChild>
             <Link to="/">Back to home</Link>
           </Button>
           <Button

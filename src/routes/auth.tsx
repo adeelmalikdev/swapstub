@@ -12,6 +12,7 @@ import {
   verifyRecoveryOtpOnly,
   resetPasswordWithOtp,
 } from "@/lib/auth-otp.functions";
+import { getPostAuthDestination } from "@/lib/profile.functions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -79,17 +80,34 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const cooldownRef = useRef<number | null>(null);
-  const postAuthRedirectRef = useRef<string>("/");
+  const postAuthRedirectRef = useRef<string | null>(null);
+
+  async function resolveAndNavigate(fallback: string = "/onboarding") {
+    try {
+      const res = await getPostAuthDestination();
+      postAuthRedirectRef.current = res.path;
+      navigate({ to: res.path, replace: true });
+    } catch {
+      postAuthRedirectRef.current = fallback;
+      navigate({ to: fallback, replace: true });
+    }
+  }
 
   // Redirect if already signed in
   useEffect(() => {
     let mounted = true;
     supabase.auth.getSession().then(({ data }) => {
-      if (mounted && data.session) navigate({ to: "/", replace: true });
+      if (mounted && data.session) {
+        void resolveAndNavigate();
+      }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
-        navigate({ to: postAuthRedirectRef.current, replace: true });
+        if (postAuthRedirectRef.current) {
+          navigate({ to: postAuthRedirectRef.current, replace: true });
+        } else {
+          void resolveAndNavigate();
+        }
       }
     });
     return () => {
@@ -205,6 +223,7 @@ function AuthPage() {
           lastName,
         },
       });
+      // Newly verified accounts always start at onboarding.
       postAuthRedirectRef.current = "/onboarding";
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
