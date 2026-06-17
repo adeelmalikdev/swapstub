@@ -9,8 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -23,14 +23,14 @@ import { Route as ListingsNewRouteImport } from './routes/listings.new'
 import { Route as ListingsIdRouteImport } from './routes/listings.$id'
 import { Route as ListingsIdEditRouteImport } from './routes/listings.$id.edit'
 
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MessagesRoute = MessagesRouteImport.update({
@@ -84,9 +84,9 @@ const ListingsIdRoute = ListingsIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ListingsIdEditRoute = ListingsIdEditRouteImport.update({
-  id: '/listings/$id/edit',
-  path: '/listings/$id/edit',
-  getParentRoute: () => rootRouteImport,
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => ListingsIdRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -98,7 +98,7 @@ export interface FileRoutesByFullPath {
   '/messages': typeof MessagesRoute
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
-  '/listings/$id': typeof ListingsIdRoute
+  '/listings/$id': typeof ListingsIdRouteWithChildren
   '/listings/new': typeof ListingsNewRoute
   '/u/$username': typeof UUsernameRoute
   '/listings/': typeof ListingsIndexRoute
@@ -113,7 +113,7 @@ export interface FileRoutesByTo {
   '/messages': typeof MessagesRoute
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
-  '/listings/$id': typeof ListingsIdRoute
+  '/listings/$id': typeof ListingsIdRouteWithChildren
   '/listings/new': typeof ListingsNewRoute
   '/u/$username': typeof UUsernameRoute
   '/listings': typeof ListingsIndexRoute
@@ -129,7 +129,7 @@ export interface FileRoutesById {
   '/messages': typeof MessagesRoute
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
-  '/listings/$id': typeof ListingsIdRoute
+  '/listings/$id': typeof ListingsIdRouteWithChildren
   '/listings/new': typeof ListingsNewRoute
   '/u/$username': typeof UUsernameRoute
   '/listings/': typeof ListingsIndexRoute
@@ -192,27 +192,26 @@ export interface RootRouteChildren {
   MessagesRoute: typeof MessagesRoute
   OnboardingRoute: typeof OnboardingRoute
   SettingsRoute: typeof SettingsRoute
-  ListingsIdRoute: typeof ListingsIdRoute
+  ListingsIdRoute: typeof ListingsIdRouteWithChildren
   ListingsNewRoute: typeof ListingsNewRoute
   UUsernameRoute: typeof UUsernameRoute
   ListingsIndexRoute: typeof ListingsIndexRoute
-  ListingsIdEditRoute: typeof ListingsIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/settings': {
       id: '/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/messages': {
@@ -287,13 +286,25 @@ declare module '@tanstack/react-router' {
     }
     '/listings/$id/edit': {
       id: '/listings/$id/edit'
-      path: '/listings/$id/edit'
+      path: '/edit'
       fullPath: '/listings/$id/edit'
       preLoaderRoute: typeof ListingsIdEditRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ListingsIdRoute
     }
   }
 }
+
+interface ListingsIdRouteChildren {
+  ListingsIdEditRoute: typeof ListingsIdEditRoute
+}
+
+const ListingsIdRouteChildren: ListingsIdRouteChildren = {
+  ListingsIdEditRoute: ListingsIdEditRoute,
+}
+
+const ListingsIdRouteWithChildren = ListingsIdRoute._addFileChildren(
+  ListingsIdRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -304,11 +315,10 @@ const rootRouteChildren: RootRouteChildren = {
   MessagesRoute: MessagesRoute,
   OnboardingRoute: OnboardingRoute,
   SettingsRoute: SettingsRoute,
-  ListingsIdRoute: ListingsIdRoute,
+  ListingsIdRoute: ListingsIdRouteWithChildren,
   ListingsNewRoute: ListingsNewRoute,
   UUsernameRoute: UUsernameRoute,
   ListingsIndexRoute: ListingsIndexRoute,
-  ListingsIdEditRoute: ListingsIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
