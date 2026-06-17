@@ -40,6 +40,19 @@ export const listMyBookings = createServerFn({ method: "GET" })
     const lm = new Map((listingsRes.data ?? []).map((l) => [l.id, l]));
     const pm = new Map((profilesRes.data ?? []).map((p) => [p.id, p]));
 
+    const completedIds = bookings
+      .filter((b) => b.status === "completed")
+      .map((b) => b.id);
+    const reviewedByMe = new Set<string>();
+    if (completedIds.length > 0) {
+      const { data: rev } = await supabase
+        .from("reviews")
+        .select("booking_id")
+        .eq("reviewer_id", userId)
+        .in("booking_id", completedIds);
+      (rev ?? []).forEach((r) => reviewedByMe.add(r.booking_id));
+    }
+
     return bookings.map((b) => ({
       id: b.id,
       ticketCode: b.ticket_code,
@@ -58,6 +71,7 @@ export const listMyBookings = createServerFn({ method: "GET" })
       createdAt: b.created_at,
       updatedAt: b.updated_at,
       role: b.host_id === userId ? ("host" as const) : ("requester" as const),
+      reviewedByMe: reviewedByMe.has(b.id),
     }));
   });
 
