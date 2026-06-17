@@ -1,6 +1,5 @@
 import { createFileRoute, ErrorComponent } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import {
   Music, Code, Languages, Palette, Dumbbell, GraduationCap,
   Scissors as ScissorsIcon, ChefHat, Briefcase, Sparkles,
@@ -61,10 +60,6 @@ const ICON_MAP: Record<string, LucideIcon> = {
 };
 
 function Landing() {
-  // bind server fns so suspense queries refetch correctly
-  useServerFn(getLandingStats);
-  useServerFn(getFeaturedCategories);
-
   const { data: stats } = useSuspenseQuery(statsQuery);
   const { data: categories } = useSuspenseQuery(categoriesQuery);
 
