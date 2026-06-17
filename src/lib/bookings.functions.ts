@@ -140,25 +140,23 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
         .select("ticket_code")
         .eq("id", data.id)
         .maybeSingle();
-      const titles: Record<typeof nextStatus, string> = {
+      const titles = {
         accepted: `${actorName} accepted your swap`,
         declined: `${actorName} declined your swap`,
         cancelled: `${actorName} cancelled the swap`,
         completed: `${actorName} marked the swap as completed`,
-        pending: "Booking updated",
-      };
-      const kindMap: Record<typeof nextStatus, "booking_accepted" | "booking_declined" | "booking_cancelled" | "booking_completed"> = {
+      } as const;
+      const kindMap = {
         accepted: "booking_accepted",
         declined: "booking_declined",
         cancelled: "booking_cancelled",
         completed: "booking_completed",
-        pending: "booking_accepted",
-      };
+      } as const;
       const { notifyBookingEvent } = await import("./notify.server");
       void notifyBookingEvent({
         recipientUserId: otherId,
-        kind: kindMap[nextStatus],
-        title: titles[nextStatus],
+        kind: kindMap[nextStatus as keyof typeof kindMap],
+        title: titles[nextStatus as keyof typeof titles],
         body: `Stub ${booking?.ticket_code ?? ""} · scheduled ${new Date(b.scheduled_at).toLocaleString()}`,
         ticketCode: booking?.ticket_code ?? "",
       });
