@@ -97,7 +97,15 @@ async function sendResend(opts: { to: string; subject: string; html: string }) {
   if (!res.ok) {
     const body = await res.text();
     console.error("[resend] send failed", res.status, body);
-    throw new Error("Couldn't send email. Please try again.");
+    // Surface Resend's validation message (e.g. unverified domain) so it's actionable
+    let detail = "";
+    try {
+      const parsed = JSON.parse(body);
+      detail = parsed?.message || parsed?.error || "";
+    } catch {
+      detail = body.slice(0, 200);
+    }
+    throw new Error(detail || "Couldn't send email. Please try again.");
   }
 }
 
