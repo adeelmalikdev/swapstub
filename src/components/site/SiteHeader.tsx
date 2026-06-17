@@ -15,24 +15,23 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm font-medium text-ink/80 sm:flex">
-          <Link to="/browse" className="hover:text-ink">Browse</Link>
+          <a href="/browse" className="hover:text-ink">Browse</a>
           <a href="/#how" className="hover:text-ink">How it works</a>
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            to="/auth"
+          <a
+            href="/auth"
             className="rounded-md border-2 border-ink bg-[var(--kraft)] px-3 py-1.5 text-sm font-semibold text-ink transition hover:bg-[var(--kraft-deep)]"
           >
             Sign in
-          </Link>
-          <Link
-            to="/auth"
-            search={{ mode: "signup" } as never}
+          </a>
+          <a
+            href="/auth?mode=signup"
             className="hidden rounded-md border-2 border-ink bg-ink px-3 py-1.5 text-sm font-semibold text-kraft transition hover:bg-ink/85 sm:inline-flex"
           >
             Get a ticket
-          </Link>
+          </a>
         </div>
       </div>
     </header>
