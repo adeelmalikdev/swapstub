@@ -75,7 +75,7 @@ export function AppShell({
         <div className="md:hidden border-t border-border bg-card/60 overflow-x-auto">
           <ul className="flex items-center gap-1 px-4 py-2 text-sm whitespace-nowrap">
             {NAV.map((n) => {
-              const active = isActive(pathname, n.to);
+              const active = isActive(pathname, n.to, n.label);
               return (
                 <li key={n.label}>
                   <Link
