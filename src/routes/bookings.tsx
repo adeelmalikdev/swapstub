@@ -3,11 +3,12 @@ import { useEffect, useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Calendar, Clock, Ticket, Check, X, CircleCheck, Ban } from "lucide-react";
+import { Calendar, Clock, Ticket, Check, X, CircleCheck, Ban, Star } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
 import { listMyBookings, updateBookingStatus } from "@/lib/bookings.functions";
+import { submitReview } from "@/lib/reviews.functions";
 
 export const Route = createFileRoute("/bookings")({
   head: () => ({
