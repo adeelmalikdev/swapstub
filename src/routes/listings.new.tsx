@@ -313,7 +313,6 @@ function SwapField({
           <option value="">Category</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.icon ? `${c.icon} ` : ""}
               {c.name}
             </option>
           ))}
