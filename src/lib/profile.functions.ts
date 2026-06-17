@@ -31,6 +31,23 @@ export const markProfileOnboarded = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const checkUsernameAvailable = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ username: z.string().trim().min(2).max(32).regex(/^[a-zA-Z0-9_]+$/) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const uname = data.username.toLowerCase();
+    const { data: row, error } = await context.supabase
+      .from("profiles")
+      .select("id")
+      .eq("username", uname)
+      .neq("id", context.userId)
+      .maybeSingle();
+    if (error) return { available: false, error: error.message };
+    return { available: !row };
+  });
+
 const onboardingSchema = z.object({
   username: z.string().trim().min(2).max(32).regex(/^[a-zA-Z0-9_]+$/, "Letters, numbers, and underscores only").optional().or(z.literal("")),
   displayName: z.string().trim().min(1).max(60).optional().or(z.literal("")),
