@@ -12,7 +12,8 @@ const NAV = [
   { label: "Profile", to: "/dashboard" },
 ] as const;
 
-function isActive(pathname: string, to: string) {
+function isActive(pathname: string, to: string, label: string) {
+  if (to === "/dashboard" && label !== "Dashboard") return false;
   if (to === "/dashboard") return pathname === "/dashboard";
   if (to === "/listings")
     return pathname === "/listings" || pathname.startsWith("/listings/");
@@ -49,7 +50,7 @@ export function AppShell({
           </Link>
           <ul className="hidden md:flex items-center gap-1 text-sm">
             {NAV.map((n) => {
-              const active = isActive(pathname, n.to);
+              const active = isActive(pathname, n.to, n.label);
               return (
                 <li key={n.label}>
                   <Link
@@ -74,7 +75,7 @@ export function AppShell({
         <div className="md:hidden border-t border-border bg-card/60 overflow-x-auto">
           <ul className="flex items-center gap-1 px-4 py-2 text-sm whitespace-nowrap">
             {NAV.map((n) => {
-              const active = isActive(pathname, n.to);
+              const active = isActive(pathname, n.to, n.label);
               return (
                 <li key={n.label}>
                   <Link
