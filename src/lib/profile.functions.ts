@@ -163,6 +163,7 @@ const onboardingSchema = z.object({
   learnSkills: z.array(z.string().trim().min(1).max(40)).max(12),
   availableDays: z.array(z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"])).max(7),
   sessionLengthMin: z.number().int().min(15).max(240).nullable().optional(),
+  avatarUrl: z.string().url().max(500).nullable().optional(),
 });
 
 export const saveOnboarding = createServerFn({ method: "POST" })
@@ -190,6 +191,7 @@ export const saveOnboarding = createServerFn({ method: "POST" })
     if (data.displayName) patch.display_name = data.displayName;
     if (data.bio !== undefined) patch.bio = data.bio || null;
     if (data.timezone) patch.timezone = data.timezone;
+    if (data.avatarUrl !== undefined) (patch as { avatar_url?: string | null }).avatar_url = data.avatarUrl;
 
     const { error } = await context.supabase
       .from("profiles")
