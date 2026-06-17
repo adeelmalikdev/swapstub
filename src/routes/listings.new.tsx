@@ -270,7 +270,7 @@ function NewListingPage() {
           </div>
         </div>
       </div>
-    </main>
+    </AppShell>
   );
 }
 
