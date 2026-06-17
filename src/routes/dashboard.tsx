@@ -144,7 +144,7 @@ function DashboardPage() {
               <SkeletonGrid />
             ) : data && data.matches.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {data.matches.map((m) => (
+                {data.matches.map((m: { id: string; offered_skill: string; wanted_skill: string; ticket_code: string }) => (
                   <SwapCard
                     key={m.id}
                     offered={m.offered_skill}
@@ -166,7 +166,7 @@ function DashboardPage() {
                   subtitle="Recent listings from across SwapStub."
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {data.explore.map((m) => (
+                  {data.explore.map((m: { id: string; offered_skill: string; wanted_skill: string; ticket_code: string }) => (
                     <SwapCard
                       key={m.id}
                       offered={m.offered_skill}
@@ -183,7 +183,7 @@ function DashboardPage() {
             <ActivityCard title="Upcoming sessions">
               {data?.upcomingBookings.length ? (
                 <ul className="space-y-3">
-                  {data.upcomingBookings.map((b) => (
+                  {data.upcomingBookings.map((b: { id: string; scheduled_at: string; duration_min: number; status: string; ticket_code: string }) => (
                     <li key={b.id} className="flex items-start gap-3 text-sm">
                       <CalendarClock className="h-4 w-4 mt-0.5 text-muted-foreground" />
                       <div>
@@ -213,7 +213,7 @@ function DashboardPage() {
             <ActivityCard title="Your listings">
               {data?.myListings.length ? (
                 <ul className="space-y-3">
-                  {data.myListings.map((l) => (
+                  {data.myListings.map((l: { id: string; offered_skill: string; wanted_skill: string; ticket_code: string; is_active: boolean }) => (
                     <li key={l.id} className="text-sm">
                       <div className="font-medium">
                         {l.offered_skill}{" "}
