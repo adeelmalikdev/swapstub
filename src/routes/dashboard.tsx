@@ -108,8 +108,10 @@ function DashboardPage() {
               Here are the swaps and conversations waiting for you.
             </p>
           </div>
-          <Button size="lg" className="shrink-0">
-            <Plus className="h-4 w-4 mr-2" /> New listing
+          <Button size="lg" className="shrink-0" asChild>
+            <Link to="/listings/new">
+              <Plus className="h-4 w-4 mr-2" /> New listing
+            </Link>
           </Button>
         </header>
 
@@ -294,7 +296,9 @@ function FirstListingBanner({ onDismiss }: { onDismiss: () => void }) {
           Turn one of the skills you teach into a listing — matches show up here within seconds.
         </p>
       </div>
-      <Button size="sm">Create listing</Button>
+      <Button size="sm" asChild>
+        <Link to="/listings/new">Create listing</Link>
+      </Button>
       <button
         onClick={onDismiss}
         aria-label="Dismiss"
