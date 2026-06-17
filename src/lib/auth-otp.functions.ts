@@ -13,7 +13,7 @@ const nameSchema = z.string().trim().min(1).max(40);
 
 const OTP_TTL_MIN = 10;
 const MAX_ATTEMPTS = 5;
-const FROM_ADDRESS = "SwapStub <onboarding@resend.dev>";
+const FROM_ADDRESS = "SwapStub <noreply@aerolens.live>";
 
 function hashCode(email: string, code: string) {
   return createHash("sha256").update(`${email.toLowerCase()}::${code}`).digest("hex");
