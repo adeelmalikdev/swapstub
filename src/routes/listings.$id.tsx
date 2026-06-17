@@ -3,10 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Clock, MapPin, Ticket, Sparkles } from "lucide-react";
+import { Clock, MapPin, Sparkles } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getListing, proposeSwap } from "@/lib/listings.functions";
+import { AppShell } from "@/components/app-shell";
 
 export const Route = createFileRoute("/listings/$id")({
   head: () => ({
@@ -90,23 +91,8 @@ function ListingDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5efe3] text-[#2d2a26]">
-      <header className="border-b border-[#d8cfc0] bg-[#f9f6f0]/80 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <Link
-            to="/discover"
-            className="inline-flex items-center gap-2 text-sm text-[#7a7164] hover:text-[#2d2a26]"
-          >
-            <ArrowLeft className="w-4 h-4" /> Discover
-          </Link>
-          <div className="inline-flex items-center gap-2 font-medium tracking-tight">
-            <Ticket className="w-4 h-4" /> SwapStub
-          </div>
-          <span className="w-16" />
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+    <AppShell>
+      <div>
         {isLoading ? (
           <div className="text-center py-16 text-[#7a7164] text-sm">Loading stub…</div>
         ) : !listing ? (
