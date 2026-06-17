@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as BookingsRouteImport } from './routes/bookings'
@@ -22,6 +23,11 @@ import { Route as ListingsIdRouteImport } from './routes/listings.$id'
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DiscoverRoute = DiscoverRouteImport.update({
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/bookings': typeof BookingsRoute
   '/dashboard': typeof DashboardRoute
   '/discover': typeof DiscoverRoute
+  '/messages': typeof MessagesRoute
   '/onboarding': typeof OnboardingRoute
   '/listings/$id': typeof ListingsIdRoute
   '/listings/new': typeof ListingsNewRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/bookings': typeof BookingsRoute
   '/dashboard': typeof DashboardRoute
   '/discover': typeof DiscoverRoute
+  '/messages': typeof MessagesRoute
   '/onboarding': typeof OnboardingRoute
   '/listings/$id': typeof ListingsIdRoute
   '/listings/new': typeof ListingsNewRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/bookings': typeof BookingsRoute
   '/dashboard': typeof DashboardRoute
   '/discover': typeof DiscoverRoute
+  '/messages': typeof MessagesRoute
   '/onboarding': typeof OnboardingRoute
   '/listings/$id': typeof ListingsIdRoute
   '/listings/new': typeof ListingsNewRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/bookings'
     | '/dashboard'
     | '/discover'
+    | '/messages'
     | '/onboarding'
     | '/listings/$id'
     | '/listings/new'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/bookings'
     | '/dashboard'
     | '/discover'
+    | '/messages'
     | '/onboarding'
     | '/listings/$id'
     | '/listings/new'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/bookings'
     | '/dashboard'
     | '/discover'
+    | '/messages'
     | '/onboarding'
     | '/listings/$id'
     | '/listings/new'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   BookingsRoute: typeof BookingsRoute
   DashboardRoute: typeof DashboardRoute
   DiscoverRoute: typeof DiscoverRoute
+  MessagesRoute: typeof MessagesRoute
   OnboardingRoute: typeof OnboardingRoute
   ListingsIdRoute: typeof ListingsIdRoute
   ListingsNewRoute: typeof ListingsNewRoute
@@ -154,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/discover': {
@@ -221,6 +241,7 @@ const rootRouteChildren: RootRouteChildren = {
   BookingsRoute: BookingsRoute,
   DashboardRoute: DashboardRoute,
   DiscoverRoute: DiscoverRoute,
+  MessagesRoute: MessagesRoute,
   OnboardingRoute: OnboardingRoute,
   ListingsIdRoute: ListingsIdRoute,
   ListingsNewRoute: ListingsNewRoute,
