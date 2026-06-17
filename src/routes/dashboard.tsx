@@ -39,6 +39,7 @@ function DashboardPage() {
   const navigate = useNavigate();
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [today, setToday] = useState<string>("");
 
   useEffect(() => {
     let mounted = true;
@@ -55,6 +56,13 @@ function DashboardPage() {
         window.localStorage.getItem("swapstub:firstListingBannerDismissed") === "1",
       );
     }
+    setToday(
+      new Date().toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      }),
+    );
     return () => {
       mounted = false;
     };
@@ -91,7 +99,7 @@ function DashboardPage() {
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+              {today || "\u00a0"}
             </p>
             <h1 className="font-[Fraunces] text-4xl sm:text-5xl tracking-tight mt-1">
               Hi, {firstName}.
