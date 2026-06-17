@@ -8,6 +8,7 @@ import {
   Sparkles,
   GraduationCap,
   Calendar,
+  Star,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
@@ -81,7 +82,7 @@ function PublicProfilePage() {
   const fetchProfile = useServerFn(getPublicProfile);
   void fetchProfile;
   const { data } = useSuspenseQuery(profileQuery(username));
-  const { profile, listings } = data;
+  const { profile, listings, reviews } = data;
 
   const initials = (profile.displayName || profile.username || "?")
     .split(" ")
@@ -237,6 +238,99 @@ function PublicProfilePage() {
               </Link>
             ))}
           </div>
+        )}
+      </section>
+
+      {/* Reviews */}
+      <section className="mt-8">
+        <div className="flex items-end justify-between mb-3">
+          <h2 className="text-lg font-semibold">Reviews</h2>
+          {reviews.average !== null && (
+            <div className="inline-flex items-center gap-1.5 text-sm">
+              <Star className="w-4 h-4 fill-[#e9b949] text-[#e9b949]" />
+              <span className="font-medium">{reviews.average.toFixed(1)}</span>
+              <span className="text-[#7a7164]">· {reviews.count}</span>
+            </div>
+          )}
+        </div>
+        {reviews.items.length === 0 ? (
+          <div className="rounded-2xl bg-[#f9f6f0] border border-dashed border-[#d8cfc0] p-8 text-center text-sm text-[#7a7164]">
+            No reviews yet.
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {reviews.items.map((r) => {
+              const name =
+                r.reviewer?.display_name || r.reviewer?.username || "Someone";
+              const initials = name
+                .split(" ")
+                .map((p) => p[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase();
+              return (
+                <li
+                  key={r.id}
+                  className="rounded-2xl border border-[#e7dfd0] bg-white p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="h-9 w-9 rounded-full bg-[#efe7d6] text-[#5a5346] flex items-center justify-center text-xs font-medium shrink-0 overflow-hidden">
+                      {r.reviewer?.avatar_url ? (
+                        <img
+                          src={r.reviewer.avatar_url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        initials
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="text-sm">
+                          {r.reviewer?.username ? (
+                            <Link
+                              to="/u/$username"
+                              params={{ username: r.reviewer.username }}
+                              className="font-medium hover:underline"
+                            >
+                              {name}
+                            </Link>
+                          ) : (
+                            <span className="font-medium">{name}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <Star
+                              key={n}
+                              className={`w-3.5 h-3.5 ${
+                                n <= r.rating
+                                  ? "fill-[#e9b949] text-[#e9b949]"
+                                  : "text-[#d8cfc0]"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      {r.body && (
+                        <p className="mt-1.5 text-sm text-[#3a352e] whitespace-pre-wrap">
+                          {r.body}
+                        </p>
+                      )}
+                      <p className="mt-1.5 text-[11px] text-[#9a9080]">
+                        {new Date(r.createdAt).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </section>
     </AppShell>
