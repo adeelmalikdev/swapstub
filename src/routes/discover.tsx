@@ -312,14 +312,13 @@ function StubCard({ listing }: { listing: Listing }) {
               )}
             </div>
           </div>
-          <button
-            type="button"
+          <Link
+            to="/listings/$id"
+            params={{ id: listing.id }}
             className="text-xs px-3 py-1.5 rounded-lg bg-[#2d2a26] text-[#f9f6f0] hover:bg-[#1f1d1a]"
-            disabled
-            title="Coming next: propose a swap"
           >
-            Propose
-          </button>
+            View
+          </Link>
         </div>
       </div>
     </article>

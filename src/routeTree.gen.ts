@@ -15,6 +15,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ListingsNewRouteImport } from './routes/listings.new'
+import { Route as ListingsIdRouteImport } from './routes/listings.$id'
 
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
@@ -46,6 +47,11 @@ const ListingsNewRoute = ListingsNewRouteImport.update({
   path: '/listings/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ListingsIdRoute = ListingsIdRouteImport.update({
+  id: '/listings/$id',
+  path: '/listings/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/discover': typeof DiscoverRoute
   '/onboarding': typeof OnboardingRoute
+  '/listings/$id': typeof ListingsIdRoute
   '/listings/new': typeof ListingsNewRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/discover': typeof DiscoverRoute
   '/onboarding': typeof OnboardingRoute
+  '/listings/$id': typeof ListingsIdRoute
   '/listings/new': typeof ListingsNewRoute
 }
 export interface FileRoutesById {
@@ -70,6 +78,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/discover': typeof DiscoverRoute
   '/onboarding': typeof OnboardingRoute
+  '/listings/$id': typeof ListingsIdRoute
   '/listings/new': typeof ListingsNewRoute
 }
 export interface FileRouteTypes {
@@ -80,6 +89,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/discover'
     | '/onboarding'
+    | '/listings/$id'
     | '/listings/new'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -88,6 +98,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/discover'
     | '/onboarding'
+    | '/listings/$id'
     | '/listings/new'
   id:
     | '__root__'
@@ -96,6 +107,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/discover'
     | '/onboarding'
+    | '/listings/$id'
     | '/listings/new'
   fileRoutesById: FileRoutesById
 }
@@ -105,6 +117,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DiscoverRoute: typeof DiscoverRoute
   OnboardingRoute: typeof OnboardingRoute
+  ListingsIdRoute: typeof ListingsIdRoute
   ListingsNewRoute: typeof ListingsNewRoute
 }
 
@@ -152,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListingsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/listings/$id': {
+      id: '/listings/$id'
+      path: '/listings/$id'
+      fullPath: '/listings/$id'
+      preLoaderRoute: typeof ListingsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -161,6 +181,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DiscoverRoute: DiscoverRoute,
   OnboardingRoute: OnboardingRoute,
+  ListingsIdRoute: ListingsIdRoute,
   ListingsNewRoute: ListingsNewRoute,
 }
 export const routeTree = rootRouteImport
