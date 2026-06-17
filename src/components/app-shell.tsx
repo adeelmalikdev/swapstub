@@ -50,7 +50,7 @@ export function AppShell({
           </Link>
           <ul className="hidden md:flex items-center gap-1 text-sm">
             {NAV.map((n) => {
-              const active = isActive(pathname, n.to);
+              const active = isActive(pathname, n.to, n.label);
               return (
                 <li key={n.label}>
                   <Link
