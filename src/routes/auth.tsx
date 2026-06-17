@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
-import { Scissors, Mail, Lock, ArrowLeft, Loader2 } from "lucide-react";
+import { Scissors, Mail, Lock, ArrowLeft, Loader2, Eye, EyeOff, User, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -19,10 +19,27 @@ import { PerforatedDivider } from "@/components/ticket/PerforatedDivider";
 type Mode = "signin" | "signup" | "verify-signup" | "forgot" | "verify-reset" | "new-password";
 
 const emailSchema = z.string().trim().toLowerCase().email("Enter a valid email").max(255);
+const nameSchema = z
+  .string()
+  .trim()
+  .min(1, "Required")
+  .max(40, "Max 40 characters")
+  .regex(/^[\p{L}'’\- ]+$/u, "Letters, spaces, hyphens only");
+
+const passwordRules = [
+  { id: "len", label: "8+ characters", test: (p: string) => p.length >= 8 },
+  { id: "upper", label: "One uppercase letter", test: (p: string) => /[A-Z]/.test(p) },
+  { id: "lower", label: "One lowercase letter", test: (p: string) => /[a-z]/.test(p) },
+  { id: "num", label: "One number", test: (p: string) => /\d/.test(p) },
+  { id: "sym", label: "One symbol (!@#…)", test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+] as const;
+
 const passwordSchema = z
   .string()
-  .min(8, "At least 8 characters")
-  .max(72, "Max 72 characters");
+  .max(72, "Max 72 characters")
+  .refine((p) => passwordRules.every((r) => r.test(p)), {
+    message: "Password doesn't meet all the rules",
+  });
 
 const RESEND_COOLDOWN = 30;
 
@@ -46,7 +63,11 @@ function AuthPage() {
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -152,15 +173,27 @@ function AuthPage() {
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
+    const firstRes = nameSchema.safeParse(firstName);
+    if (!firstRes.success) return toast.error(`First name: ${firstRes.error.issues[0].message}`);
+    const lastRes = nameSchema.safeParse(lastName);
+    if (!lastRes.success) return toast.error(`Last name: ${lastRes.error.issues[0].message}`);
     const emailRes = emailSchema.safeParse(email);
     if (!emailRes.success) return toast.error(emailRes.error.issues[0].message);
     const passRes = passwordSchema.safeParse(password);
     if (!passRes.success) return toast.error(passRes.error.issues[0].message);
+    if (password !== confirmPassword) return toast.error("Passwords don't match");
     setLoading(true);
     const { error } = await supabase.auth.signUp({
       email: emailRes.data,
       password: passRes.data,
-      options: { emailRedirectTo: `${window.location.origin}/` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          first_name: firstRes.data,
+          last_name: lastRes.data,
+          display_name: `${firstRes.data} ${lastRes.data}`,
+        },
+      },
     });
     setLoading(false);
     if (error) return toast.error(error.message);
@@ -221,6 +254,7 @@ function AuthPage() {
     e.preventDefault();
     const passRes = passwordSchema.safeParse(newPassword);
     if (!passRes.success) return toast.error(passRes.error.issues[0].message);
+    if (newPassword !== confirmNewPassword) return toast.error("Passwords don't match");
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password: passRes.data });
     setLoading(false);
@@ -306,12 +340,30 @@ function AuthPage() {
 
               {mode === "signup" && (
                 <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <NameField
+                      id="first-name"
+                      label="First name"
+                      value={firstName}
+                      onChange={setFirstName}
+                      autoComplete="given-name"
+                    />
+                    <NameField
+                      id="last-name"
+                      label="Last name"
+                      value={lastName}
+                      onChange={setLastName}
+                      autoComplete="family-name"
+                    />
+                  </div>
                   <EmailField value={email} onChange={setEmail} />
                   <PasswordField
                     value={password}
                     onChange={setPassword}
                     autoComplete="new-password"
-                    hint="8+ characters"
+                    showRules
+                    confirmValue={confirmPassword}
+                    onConfirmChange={setConfirmPassword}
                   />
                   <SubmitButton loading={loading} label="Send 6-digit code" />
                   <p className="text-center text-sm text-ink/70">
@@ -369,7 +421,11 @@ function AuthPage() {
                     onChange={setNewPassword}
                     autoComplete="new-password"
                     label="New password"
-                    hint="8+ characters"
+                    id="new-password"
+                    showRules
+                    confirmValue={confirmNewPassword}
+                    onConfirmChange={setConfirmNewPassword}
+                    confirmLabel="Confirm new password"
                   />
                   <SubmitButton loading={loading} label="Update password" />
                 </form>
@@ -422,32 +478,124 @@ function PasswordField({
   autoComplete,
   label = "Password",
   hint,
+  id = "password",
+  showRules = false,
+  confirmValue,
+  onConfirmChange,
+  confirmLabel = "Confirm password",
 }: {
   value: string;
   onChange: (v: string) => void;
   autoComplete: string;
   label?: string;
   hint?: string;
+  id?: string;
+  showRules?: boolean;
+  confirmValue?: string;
+  onConfirmChange?: (v: string) => void;
+  confirmLabel?: string;
 }) {
+  const [show, setShow] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const passed = passwordRules.filter((r) => r.test(value)).length;
+  const strength = value.length === 0 ? 0 : passed;
+  const strengthLabel =
+    strength <= 1 ? "Weak" : strength <= 3 ? "Fair" : strength === 4 ? "Strong" : "Excellent";
+  const strengthColor =
+    strength <= 1
+      ? "var(--brick)"
+      : strength <= 3
+        ? "var(--ochre)"
+        : "var(--teal)";
+  const mismatch =
+    showRules && confirmValue !== undefined && confirmValue.length > 0 && confirmValue !== value;
   return (
-    <div className="space-y-1.5">
-      <Label htmlFor="password" className="text-ink">
-        {label}
-      </Label>
-      <div className="relative">
-        <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/50" />
-        <Input
-          id="password"
-          type="password"
-          autoComplete={autoComplete}
-          required
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="••••••••"
-          className="border-2 border-ink/80 bg-[var(--kraft)] pl-9 text-ink placeholder:text-ink/40 focus-visible:ring-[var(--teal)]"
-        />
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <Label htmlFor={id} className="text-ink">{label}</Label>
+        <div className="relative">
+          <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/50" />
+          <Input
+            id={id}
+            type={show ? "text" : "password"}
+            autoComplete={autoComplete}
+            required
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="••••••••"
+            className="border-2 border-ink/80 bg-[var(--kraft)] pl-9 pr-10 text-ink placeholder:text-ink/40 focus-visible:ring-[var(--teal)]"
+          />
+          <button
+            type="button"
+            onClick={() => setShow((s) => !s)}
+            aria-label={show ? "Hide password" : "Show password"}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-ink/60 hover:text-ink"
+          >
+            {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+        {hint && !showRules && <p className="text-xs text-ink/60">{hint}</p>}
       </div>
-      {hint && <p className="text-xs text-ink/60">{hint}</p>}
+
+      {showRules && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full border border-ink/30 bg-[var(--kraft-deep)]">
+              <div
+                className="h-full transition-all"
+                style={{ width: `${(strength / 5) * 100}%`, backgroundColor: strengthColor }}
+              />
+            </div>
+            <span className="font-mono text-[10px] uppercase tracking-wider text-ink/70">
+              {value.length === 0 ? "—" : strengthLabel}
+            </span>
+          </div>
+          <ul className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+            {passwordRules.map((r) => {
+              const ok = r.test(value);
+              return (
+                <li
+                  key={r.id}
+                  className={`flex items-center gap-1.5 text-xs ${ok ? "text-[var(--teal)]" : "text-ink/60"}`}
+                >
+                  {ok ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                  <span>{r.label}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {onConfirmChange && (
+        <div className="space-y-1.5">
+          <Label htmlFor={`${id}-confirm`} className="text-ink">{confirmLabel}</Label>
+          <div className="relative">
+            <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/50" />
+            <Input
+              id={`${id}-confirm`}
+              type={showConfirm ? "text" : "password"}
+              autoComplete={autoComplete}
+              required
+              value={confirmValue ?? ""}
+              onChange={(e) => onConfirmChange(e.target.value)}
+              placeholder="••••••••"
+              className={`border-2 bg-[var(--kraft)] pl-9 pr-10 text-ink placeholder:text-ink/40 focus-visible:ring-[var(--teal)] ${
+                mismatch ? "border-[var(--brick)]" : "border-ink/80"
+              }`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm((s) => !s)}
+              aria-label={showConfirm ? "Hide password" : "Show password"}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-ink/60 hover:text-ink"
+            >
+              {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {mismatch && <p className="text-xs text-[var(--brick)]">Passwords don't match</p>}
+        </div>
+      )}
     </div>
   );
 }
@@ -461,6 +609,39 @@ function SubmitButton({ loading, label }: { loading: boolean; label: string }) {
     >
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : label}
     </Button>
+  );
+}
+
+function NameField({
+  id,
+  label,
+  value,
+  onChange,
+  autoComplete,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-ink">{label}</Label>
+      <div className="relative">
+        <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/50" />
+        <Input
+          id={id}
+          type="text"
+          autoComplete={autoComplete}
+          required
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={label}
+          className="border-2 border-ink/80 bg-[var(--kraft)] pl-9 text-ink placeholder:text-ink/40 focus-visible:ring-[var(--teal)]"
+        />
+      </div>
+    </div>
   );
 }
 
