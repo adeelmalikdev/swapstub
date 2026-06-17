@@ -5,6 +5,13 @@ import { Scissors, Mail, Lock, ArrowLeft, Loader2, Eye, EyeOff, User, Check, X }
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import {
+  requestSignupOtp,
+  verifySignupOtp,
+  requestRecoveryOtp,
+  verifyRecoveryOtpOnly,
+  resetPasswordWithOtp,
+} from "@/lib/auth-otp.functions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -146,29 +153,9 @@ function AuthPage() {
     });
     setLoading(false);
     if (error) {
-      if (error.message.toLowerCase().includes("email not confirmed")) {
-        toast.message("Email not verified", {
-          description: "We're sending a fresh 6-digit code.",
-        });
-        await sendSignupOtp(emailRes.data);
-        setMode("verify-signup");
-        return;
-      }
       return toast.error(error.message);
     }
     toast.success("Signed in");
-  }
-
-  async function sendSignupOtp(addr: string) {
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email: addr,
-    });
-    if (error) toast.error(error.message);
-    else {
-      startCooldown();
-      toast.success("Code sent");
-    }
   }
 
   async function handleSignUp(e: React.FormEvent) {
@@ -183,40 +170,47 @@ function AuthPage() {
     if (!passRes.success) return toast.error(passRes.error.issues[0].message);
     if (password !== confirmPassword) return toast.error("Passwords don't match");
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: emailRes.data,
-      password: passRes.data,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
+    try {
+      await requestSignupOtp({
         data: {
-          first_name: firstRes.data,
-          last_name: lastRes.data,
-          display_name: `${firstRes.data} ${lastRes.data}`,
+          email: emailRes.data,
+          firstName: firstRes.data,
+          lastName: lastRes.data,
         },
-      },
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    setEmail(emailRes.data);
-    setOtp("");
-    setMode("verify-signup");
-    startCooldown();
-    toast.success("Check your inbox for the 6-digit code");
+      });
+      setEmail(emailRes.data);
+      setOtp("");
+      setMode("verify-signup");
+      startCooldown();
+      toast.success("Check your inbox for the 6-digit code");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't send code");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleVerifySignup(code: string) {
     setLoading(true);
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: code,
-      type: "email",
-    });
-    setLoading(false);
-    if (error) {
+    try {
+      await verifySignupOtp({
+        data: {
+          email,
+          code,
+          password,
+          firstName,
+          lastName,
+        },
+      });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast.success("Email verified — you're in");
+    } catch (err) {
       setOtp("");
-      return toast.error(error.message);
+      toast.error(err instanceof Error ? err.message : "Couldn't verify code");
+    } finally {
+      setLoading(false);
     }
-    toast.success("Email verified — you're in");
   }
 
   async function handleForgot(e: React.FormEvent) {
@@ -224,30 +218,33 @@ function AuthPage() {
     const emailRes = emailSchema.safeParse(email);
     if (!emailRes.success) return toast.error(emailRes.error.issues[0].message);
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(emailRes.data);
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    setEmail(emailRes.data);
-    setOtp("");
-    setMode("verify-reset");
-    startCooldown();
-    toast.success("Reset code sent");
+    try {
+      await requestRecoveryOtp({ data: { email: emailRes.data } });
+      setEmail(emailRes.data);
+      setOtp("");
+      setMode("verify-reset");
+      startCooldown();
+      toast.success("If that email exists, a reset code is on the way");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't send code");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleVerifyReset(code: string) {
     setLoading(true);
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: code,
-      type: "recovery",
-    });
-    setLoading(false);
-    if (error) {
+    try {
+      await verifyRecoveryOtpOnly({ data: { email, code } });
+      setOtp(code); // keep the verified code for the password-update call
+      setMode("new-password");
+      toast.success("Code accepted — set a new password");
+    } catch (err) {
       setOtp("");
-      return toast.error(error.message);
+      toast.error(err instanceof Error ? err.message : "Couldn't verify code");
+    } finally {
+      setLoading(false);
     }
-    setMode("new-password");
-    toast.success("Code accepted — set a new password");
   }
 
   async function handleNewPassword(e: React.FormEvent) {
@@ -256,23 +253,38 @@ function AuthPage() {
     if (!passRes.success) return toast.error(passRes.error.issues[0].message);
     if (newPassword !== confirmNewPassword) return toast.error("Passwords don't match");
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password: passRes.data });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Password updated");
-    navigate({ to: "/", replace: true });
+    try {
+      await resetPasswordWithOtp({
+        data: { email, code: otp, password: passRes.data },
+      });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password: passRes.data,
+      });
+      if (error) throw error;
+      toast.success("Password updated — you're signed in");
+      navigate({ to: "/", replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't update password");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleResend() {
     if (cooldown > 0) return;
-    if (mode === "verify-signup") await sendSignupOtp(email);
-    else if (mode === "verify-reset") {
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
-      if (error) toast.error(error.message);
-      else {
-        startCooldown();
-        toast.success("Code resent");
+    try {
+      if (mode === "verify-signup") {
+        await requestSignupOtp({
+          data: { email, firstName, lastName },
+        });
+      } else if (mode === "verify-reset") {
+        await requestRecoveryOtp({ data: { email } });
       }
+      startCooldown();
+      toast.success("Code resent");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't resend code");
     }
   }
 
