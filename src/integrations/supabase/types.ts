@@ -256,34 +256,46 @@ export type Database = {
       }
       profiles: {
         Row: {
+          available_days: string[]
           avatar_url: string | null
           bio: string | null
           created_at: string
           display_name: string | null
           id: string
+          learn_skills: string[]
           onboarded: boolean
+          session_length_min: number | null
+          teach_skills: string[]
           timezone: string | null
           updated_at: string
           username: string | null
         }
         Insert: {
+          available_days?: string[]
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           id: string
+          learn_skills?: string[]
           onboarded?: boolean
+          session_length_min?: number | null
+          teach_skills?: string[]
           timezone?: string | null
           updated_at?: string
           username?: string | null
         }
         Update: {
+          available_days?: string[]
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          learn_skills?: string[]
           onboarded?: boolean
+          session_length_min?: number | null
+          teach_skills?: string[]
           timezone?: string | null
           updated_at?: string
           username?: string | null
