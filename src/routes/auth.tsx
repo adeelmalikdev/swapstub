@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
-import { Scissors, Mail, Lock, ArrowLeft, Loader2 } from "lucide-react";
+import { Scissors, Mail, Lock, ArrowLeft, Loader2, Eye, EyeOff, User, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -19,10 +19,27 @@ import { PerforatedDivider } from "@/components/ticket/PerforatedDivider";
 type Mode = "signin" | "signup" | "verify-signup" | "forgot" | "verify-reset" | "new-password";
 
 const emailSchema = z.string().trim().toLowerCase().email("Enter a valid email").max(255);
+const nameSchema = z
+  .string()
+  .trim()
+  .min(1, "Required")
+  .max(40, "Max 40 characters")
+  .regex(/^[\p{L}'’\- ]+$/u, "Letters, spaces, hyphens only");
+
+const passwordRules = [
+  { id: "len", label: "8+ characters", test: (p: string) => p.length >= 8 },
+  { id: "upper", label: "One uppercase letter", test: (p: string) => /[A-Z]/.test(p) },
+  { id: "lower", label: "One lowercase letter", test: (p: string) => /[a-z]/.test(p) },
+  { id: "num", label: "One number", test: (p: string) => /\d/.test(p) },
+  { id: "sym", label: "One symbol (!@#…)", test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+] as const;
+
 const passwordSchema = z
   .string()
-  .min(8, "At least 8 characters")
-  .max(72, "Max 72 characters");
+  .max(72, "Max 72 characters")
+  .refine((p) => passwordRules.every((r) => r.test(p)), {
+    message: "Password doesn't meet all the rules",
+  });
 
 const RESEND_COOLDOWN = 30;
 
@@ -46,7 +63,11 @@ function AuthPage() {
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
