@@ -2,9 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Search, Ticket, MapPin, Clock, Sparkles, X } from "lucide-react";
+import { Search, MapPin, Clock, Sparkles, X, Plus } from "lucide-react";
 
 import { discoverListings, listCategories } from "@/lib/listings.functions";
+import { AppShell } from "@/components/app-shell";
 
 export const Route = createFileRoute("/discover")({
   head: () => ({
@@ -84,34 +85,21 @@ function DiscoverPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5efe3] text-[#2d2a26]">
-      <header className="border-b border-[#d8cfc0] bg-[#f9f6f0]/80 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <Link
-            to="/dashboard"
-            className="inline-flex items-center gap-2 text-sm text-[#7a7164] hover:text-[#2d2a26]"
-          >
-            <ArrowLeft className="w-4 h-4" /> Dashboard
-          </Link>
-          <div className="inline-flex items-center gap-2 font-medium tracking-tight">
-            <Ticket className="w-4 h-4" /> SwapStub
-          </div>
-          <Link
-            to="/listings/new"
-            className="text-sm px-3 py-1.5 rounded-lg bg-[#2d2a26] text-[#f9f6f0] hover:bg-[#1f1d1a]"
-          >
-            New listing
-          </Link>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <div className="mb-6">
+    <AppShell>
+      <div className="mb-6 flex items-end justify-between gap-4">
+        <div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Discover swaps</h1>
           <p className="text-sm text-[#7a7164] mt-1">
             Find stubs from people teaching what you want — and looking for what you offer.
           </p>
         </div>
+        <Link
+          to="/listings/new"
+          className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg bg-[#2d2a26] text-[#f9f6f0] hover:bg-[#1f1d1a] shrink-0"
+        >
+          <Plus className="w-4 h-4" /> New
+        </Link>
+      </div>
 
         <div className="rounded-2xl bg-[#f9f6f0] border border-[#d8cfc0] p-4 sm:p-5 mb-6 shadow-sm">
           <form onSubmit={onSearchSubmit} className="flex gap-2 mb-3">
@@ -224,8 +212,7 @@ function DiscoverPage() {
             ))}
           </div>
         )}
-      </main>
-    </div>
+    </AppShell>
   );
 }
 
