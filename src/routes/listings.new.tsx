@@ -3,10 +3,11 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Ticket } from "lucide-react";
+import { Ticket } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { createListing, listCategories } from "@/lib/listings.functions";
+import { AppShell } from "@/components/app-shell";
 
 export const Route = createFileRoute("/listings/new")({
   head: () => ({
@@ -108,24 +109,20 @@ function NewListingPage() {
 
   if (!authChecked) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[#e5ddd3]" style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
-        <div className="text-[#7a7164] text-sm tracking-widest uppercase">Loading…</div>
-      </main>
+      <AppShell>
+        <div className="flex items-center justify-center py-16">
+          <div className="text-[#7a7164] text-sm tracking-widest uppercase">Loading…</div>
+        </div>
+      </AppShell>
     );
   }
 
   return (
-    <main
-      className="min-h-screen w-full flex items-start sm:items-center justify-center bg-[#e5ddd3] p-6 py-12"
-      style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
-    >
-      <div className="w-full max-w-[520px]">
-        <Link
-          to="/dashboard"
-          className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[#7a7164] hover:text-[#2d2a26] mb-4"
-        >
-          <ArrowLeft className="w-3 h-3" /> Back to dashboard
-        </Link>
+    <AppShell>
+      <div
+        className="w-full max-w-[520px] mx-auto"
+        style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
+      >
 
         <div className="relative">
           <div className="absolute inset-x-3 -top-2 h-6 bg-[#f0e9da] rounded-[2rem] border border-[#d8cfc0]/70 -z-10" aria-hidden />
