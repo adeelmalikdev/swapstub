@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, X, Camera } from "lucide-react";
+import { ArrowLeft, Plus, X, Camera, Check, Loader2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { saveOnboarding } from "@/lib/profile.functions";
+import { saveOnboarding, checkUsernameAvailable } from "@/lib/profile.functions";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -63,6 +63,29 @@ function detectTimezone(): string {
   } catch {
     return "UTC";
   }
+}
+
+const FALLBACK_TIMEZONES = [
+  "UTC","Pacific/Honolulu","America/Anchorage","America/Los_Angeles","America/Denver",
+  "America/Phoenix","America/Chicago","America/Mexico_City","America/New_York",
+  "America/Toronto","America/Halifax","America/Sao_Paulo","America/Argentina/Buenos_Aires",
+  "Atlantic/Azores","Europe/London","Europe/Dublin","Europe/Lisbon","Europe/Paris",
+  "Europe/Berlin","Europe/Madrid","Europe/Rome","Europe/Amsterdam","Europe/Stockholm",
+  "Europe/Athens","Europe/Istanbul","Europe/Moscow","Africa/Lagos","Africa/Cairo",
+  "Africa/Johannesburg","Asia/Dubai","Asia/Tehran","Asia/Karachi","Asia/Kolkata",
+  "Asia/Kathmandu","Asia/Dhaka","Asia/Bangkok","Asia/Jakarta","Asia/Singapore",
+  "Asia/Hong_Kong","Asia/Shanghai","Asia/Taipei","Asia/Tokyo","Asia/Seoul",
+  "Australia/Perth","Australia/Adelaide","Australia/Sydney","Pacific/Auckland",
+];
+
+function getTimezoneList(): string[] {
+  try {
+    const fn = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf;
+    if (typeof fn === "function") return fn("timeZone");
+  } catch {
+    // ignore
+  }
+  return FALLBACK_TIMEZONES;
 }
 
 function OnboardingPage() {
