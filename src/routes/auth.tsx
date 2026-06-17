@@ -79,6 +79,7 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const cooldownRef = useRef<number | null>(null);
+  const postAuthRedirectRef = useRef<string>("/");
 
   // Redirect if already signed in
   useEffect(() => {
@@ -87,7 +88,9 @@ function AuthPage() {
       if (mounted && data.session) navigate({ to: "/", replace: true });
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) navigate({ to: "/", replace: true });
+      if (event === "SIGNED_IN" && session) {
+        navigate({ to: postAuthRedirectRef.current, replace: true });
+      }
     });
     return () => {
       mounted = false;
@@ -202,6 +205,7 @@ function AuthPage() {
           lastName,
         },
       });
+      postAuthRedirectRef.current = "/onboarding";
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       toast.success("Email verified — you're in");
