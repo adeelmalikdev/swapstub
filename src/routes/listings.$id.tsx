@@ -296,7 +296,7 @@ function ListingDetailPage() {
             </section>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
