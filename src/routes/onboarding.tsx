@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, X, Camera, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, X, Check, Loader2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { saveOnboarding, checkUsernameAvailable } from "@/lib/profile.functions";
+import { AvatarUpload } from "@/components/avatar-upload";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -104,6 +105,8 @@ function OnboardingPage() {
   const [learnSkills, setLearnSkills] = useState<string[]>([]);
   const [availableDays, setAvailableDays] = useState<string[]>([]);
   const [sessionLengthMin, setSessionLengthMin] = useState<number | null>(60);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -113,6 +116,7 @@ function OnboardingPage() {
         navigate({ to: "/auth", replace: true });
         return;
       }
+      setUserId(data.user.id);
       // Pre-fill display name from email if empty.
       const meta = (data.user.user_metadata ?? {}) as Record<string, unknown>;
       const first = typeof meta.first_name === "string" ? meta.first_name : "";
@@ -159,6 +163,7 @@ function OnboardingPage() {
           learnSkills,
           availableDays,
           sessionLengthMin,
+          avatarUrl,
         },
       });
       toast.success(skipped ? "You're in — finish your profile anytime" : "Profile saved");
@@ -232,6 +237,9 @@ function OnboardingPage() {
                   setBio={setBio}
                   timezone={timezone}
                   setTimezone={setTimezone}
+                  userId={userId}
+                  avatarUrl={avatarUrl}
+                  setAvatarUrl={setAvatarUrl}
                 />
               )}
               {step.id === "teach" && (
