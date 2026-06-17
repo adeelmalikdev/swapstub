@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { AppShell } from "@/components/app-shell";
 import { getDashboardData } from "@/lib/profile.functions";
 import {
   Ticket,
@@ -13,7 +14,6 @@ import {
   Plus,
   X,
   ArrowRight,
-  LogOut,
 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -26,14 +26,6 @@ export const Route = createFileRoute("/dashboard")({
   }),
   component: DashboardPage,
 });
-
-const NAV = [
-  { label: "Discover", to: "/discover" },
-  { label: "Listings", to: "/listings" },
-  { label: "Bookings", to: "/dashboard" },
-  { label: "Messages", to: "/dashboard" },
-  { label: "Profile", to: "/dashboard" },
-] as const;
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -88,13 +80,8 @@ function DashboardPage() {
     "friend";
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <TopNav onSignOut={async () => {
-        await supabase.auth.signOut();
-        navigate({ to: "/auth", replace: true });
-      }} />
-
-      <div className="max-w-6xl mx-auto px-6 py-10 space-y-8">
+    <AppShell>
+      <div className="space-y-8">
         {/* Greeting */}
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
@@ -249,38 +236,7 @@ function DashboardPage() {
           </aside>
         </div>
       </div>
-    </main>
-  );
-}
-
-function TopNav({ onSignOut }: { onSignOut: () => void }) {
-  return (
-    <nav className="border-b border-border bg-card/60 backdrop-blur sticky top-0 z-10">
-      <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between gap-6">
-        <Link to="/" className="font-[Fraunces] text-xl tracking-tight">
-          SwapStub
-        </Link>
-        <ul className="hidden md:flex items-center gap-1 text-sm">
-          {NAV.map((n, i) => (
-            <li key={n.label}>
-              <Link
-                to={n.to}
-                className={`px-3 py-1.5 rounded-full transition ${
-                  i === 0
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {n.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <Button variant="ghost" size="sm" onClick={onSignOut}>
-          <LogOut className="h-4 w-4 mr-1.5" /> Sign out
-        </Button>
-      </div>
-    </nav>
+    </AppShell>
   );
 }
 
