@@ -319,6 +319,130 @@ function BookingCard({
           )}
         </div>
       )}
+      {b.status === "completed" && other && (
+        <ReviewBlock
+          bookingId={b.id}
+          revieweeId={other.id}
+          revieweeName={other.display_name || other.username || "your partner"}
+          alreadyReviewed={b.reviewedByMe}
+        />
+      )}
     </article>
+  );
+}
+
+function ReviewBlock({
+  bookingId,
+  revieweeId,
+  revieweeName,
+  alreadyReviewed,
+}: {
+  bookingId: string;
+  revieweeId: string;
+  revieweeName: string;
+  alreadyReviewed: boolean;
+}) {
+  const qc = useQueryClient();
+  const submit = useServerFn(submitReview);
+  const [open, setOpen] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [body, setBody] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  if (alreadyReviewed) {
+    return (
+      <div className="mt-4 pt-3 border-t border-[#ece4d2] text-xs text-[#7a7164] inline-flex items-center gap-1.5">
+        <CircleCheck className="w-3.5 h-3.5 text-[#205a36]" /> You reviewed {revieweeName}
+      </div>
+    );
+  }
+
+  if (!open) {
+    return (
+      <div className="mt-4 pt-3 border-t border-[#ece4d2] flex items-center justify-between gap-3">
+        <p className="text-xs text-[#7a7164]">How did this swap go?</p>
+        <button
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-[#e7dfd0] hover:border-[#bdaf9c]"
+        >
+          <Star className="w-4 h-4" /> Leave a review
+        </button>
+      </div>
+    );
+  }
+
+  const onSubmit = async () => {
+    if (rating < 1) {
+      toast.error("Pick a rating");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await submit({ data: { bookingId, revieweeId, rating, body } });
+      toast.success("Review posted");
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ["my-bookings"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't post review");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 pt-4 border-t border-[#ece4d2] space-y-3">
+      <div>
+        <p className="text-xs text-[#7a7164] mb-1.5">
+          Rate your swap with {revieweeName}
+        </p>
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map((n) => {
+            const filled = (hover || rating) >= n;
+            return (
+              <button
+                key={n}
+                type="button"
+                onMouseEnter={() => setHover(n)}
+                onMouseLeave={() => setHover(0)}
+                onClick={() => setRating(n)}
+                className="p-0.5"
+                aria-label={`${n} star${n > 1 ? "s" : ""}`}
+              >
+                <Star
+                  className={`w-6 h-6 ${
+                    filled ? "fill-[#e9b949] text-[#e9b949]" : "text-[#cfc7b8]"
+                  }`}
+                />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={3}
+        maxLength={500}
+        placeholder="Optional note about the swap…"
+        className="w-full text-sm rounded-lg border border-[#e7dfd0] bg-[#fbf8f2] px-3 py-2 focus:outline-none focus:border-[#bdaf9c] resize-none"
+      />
+      <div className="flex items-center justify-end gap-2">
+        <button
+          onClick={() => setOpen(false)}
+          className="text-sm px-3 py-1.5 rounded-lg text-[#5a544b] hover:bg-[#f5f2eb]"
+          disabled={submitting}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={onSubmit}
+          disabled={submitting || rating < 1}
+          className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-[#2d2a26] text-[#f9f6f0] hover:bg-[#1f1d1a] disabled:opacity-50"
+        >
+          <Star className="w-4 h-4" /> {submitting ? "Posting…" : "Post review"}
+        </button>
+      </div>
+    </div>
   );
 }
