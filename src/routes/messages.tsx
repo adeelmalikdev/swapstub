@@ -50,15 +50,36 @@ function MessagesPage() {
     queryKey: ["threads"],
     queryFn: () => fetchThreads(),
     enabled: authed === true,
-    refetchInterval: 15_000,
+    refetchInterval: 30_000,
   });
 
   const threadQ = useQuery({
     queryKey: ["thread", activeId],
     queryFn: () => fetchThread({ data: { id: activeId! } }),
     enabled: authed === true && !!activeId,
-    refetchInterval: 5_000,
   });
+
+  // Realtime: new/updated messages refresh the open thread + threads list.
+  useEffect(() => {
+    if (authed !== true) return;
+    const channel = supabase
+      .channel("messages-stream")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages" },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as { thread_id?: string } | null;
+          qc.invalidateQueries({ queryKey: ["threads"] });
+          if (row?.thread_id) {
+            qc.invalidateQueries({ queryKey: ["thread", row.thread_id] });
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [authed, qc]);
 
   const threads = threadsQ.data ?? [];
   const thread = threadQ.data;
