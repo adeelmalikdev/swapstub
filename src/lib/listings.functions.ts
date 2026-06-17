@@ -20,6 +20,132 @@ export const listCategories = createServerFn({ method: "GET" }).handler(async ()
 
 const DAY_ENUM = z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"]);
 
+export const getListing = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ data }) => {
+    const supabase = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+      { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
+    );
+    const { data: l, error } = await supabase
+      .from("listings")
+      .select(
+        "id, ticket_code, user_id, offered_skill, wanted_skill, offered_category_id, wanted_category_id, description, availability, created_at, is_active",
+      )
+      .eq("id", data.id)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!l) return null;
+
+    const [authorRes, catsRes] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, username, display_name, bio, avatar_url, timezone, teach_skills, learn_skills")
+        .eq("id", l.user_id)
+        .maybeSingle(),
+      supabase
+        .from("categories")
+        .select("id, name, slug")
+        .in(
+          "id",
+          [l.offered_category_id, l.wanted_category_id].filter((v): v is string => Boolean(v)),
+        ),
+    ]);
+    if (authorRes.error) throw new Error(authorRes.error.message);
+    if (catsRes.error) throw new Error(catsRes.error.message);
+    const cm = new Map((catsRes.data ?? []).map((c) => [c.id, c]));
+
+    return {
+      id: l.id,
+      ticketCode: l.ticket_code,
+      userId: l.user_id,
+      offeredSkill: l.offered_skill,
+      wantedSkill: l.wanted_skill,
+      description: l.description,
+      availability:
+        (l.availability as { days?: string[]; sessionLengthMin?: number | null } | null) ?? null,
+      createdAt: l.created_at,
+      offeredCategory: l.offered_category_id ? cm.get(l.offered_category_id) ?? null : null,
+      wantedCategory: l.wanted_category_id ? cm.get(l.wanted_category_id) ?? null : null,
+      author: authorRes.data ?? null,
+    };
+  });
+
+const proposeSwapSchema = z.object({
+  listingId: z.string().uuid(),
+  scheduledAt: z.string().min(10), // ISO datetime
+  durationMin: z.number().int().min(15).max(240),
+  message: z.string().trim().min(1).max(1000),
+});
+
+export const proposeSwap = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => proposeSwapSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: listing, error: lErr } = await supabase
+      .from("listings")
+      .select("id, user_id, is_active")
+      .eq("id", data.listingId)
+      .maybeSingle();
+    if (lErr) throw new Error(lErr.message);
+    if (!listing || !listing.is_active) throw new Error("Listing not available");
+    if (listing.user_id === userId) throw new Error("You can't propose a swap on your own stub");
+
+    const scheduled = new Date(data.scheduledAt);
+    if (Number.isNaN(scheduled.getTime())) throw new Error("Invalid scheduled time");
+    if (scheduled.getTime() < Date.now() - 60_000) throw new Error("Pick a future time");
+
+    const { data: booking, error: bErr } = await supabase
+      .from("bookings")
+      .insert({
+        listing_id: listing.id,
+        requester_id: userId,
+        host_id: listing.user_id,
+        scheduled_at: scheduled.toISOString(),
+        duration_min: data.durationMin,
+        message: data.message,
+      })
+      .select("id, ticket_code")
+      .single();
+    if (bErr) throw new Error(bErr.message);
+
+    // Find or create thread between users (canonical ordering by uuid string).
+    const [ua, ub] = [userId, listing.user_id].sort();
+    const { data: existing, error: tErr } = await supabase
+      .from("message_threads")
+      .select("id")
+      .eq("user_a", ua)
+      .eq("user_b", ub)
+      .maybeSingle();
+    if (tErr) throw new Error(tErr.message);
+
+    let threadId = existing?.id;
+    if (!threadId) {
+      const { data: t, error: ctErr } = await supabase
+        .from("message_threads")
+        .insert({ user_a: ua, user_b: ub, booking_id: booking.id })
+        .select("id")
+        .single();
+      if (ctErr) throw new Error(ctErr.message);
+      threadId = t.id;
+    }
+
+    const { error: mErr } = await supabase
+      .from("messages")
+      .insert({ thread_id: threadId, sender_id: userId, body: data.message });
+    if (mErr) throw new Error(mErr.message);
+
+    await supabase
+      .from("message_threads")
+      .update({ last_message_at: new Date().toISOString() })
+      .eq("id", threadId);
+
+    return { bookingId: booking.id, ticketCode: booking.ticket_code, threadId };
+  });
+
 const discoverFilterSchema = z.object({
   search: z.string().trim().max(80).optional().or(z.literal("")),
   offeredCategoryId: z.string().uuid().optional().or(z.literal("")),
