@@ -351,7 +351,7 @@ export const updateMyProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => updateProfileSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = {};
+    const patch: Database["public"]["Tables"]["profiles"]["Update"] = {};
     if (data.displayName !== undefined) patch.display_name = data.displayName;
     if (data.bio !== undefined) patch.bio = data.bio || null;
     if (data.timezone !== undefined) patch.timezone = data.timezone;
