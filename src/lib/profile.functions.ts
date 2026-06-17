@@ -108,7 +108,7 @@ export const getDashboardData = createServerFn({ method: "GET" })
           )
           .or(`host_id.eq.${userId},requester_id.eq.${userId}`)
           .gte("scheduled_at", nowIso)
-          .in("status", ["pending", "confirmed"])
+          .in("status", ["pending", "accepted"])
           .order("scheduled_at", { ascending: true })
           .limit(5),
         supabase
