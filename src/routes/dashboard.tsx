@@ -236,38 +236,7 @@ function DashboardPage() {
           </aside>
         </div>
       </div>
-    </main>
-  );
-}
-
-function TopNav({ onSignOut }: { onSignOut: () => void }) {
-  return (
-    <nav className="border-b border-border bg-card/60 backdrop-blur sticky top-0 z-10">
-      <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between gap-6">
-        <Link to="/" className="font-[Fraunces] text-xl tracking-tight">
-          SwapStub
-        </Link>
-        <ul className="hidden md:flex items-center gap-1 text-sm">
-          {NAV.map((n, i) => (
-            <li key={n.label}>
-              <Link
-                to={n.to}
-                className={`px-3 py-1.5 rounded-full transition ${
-                  i === 0
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {n.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <Button variant="ghost" size="sm" onClick={onSignOut}>
-          <LogOut className="h-4 w-4 mr-1.5" /> Sign out
-        </Button>
-      </div>
-    </nav>
+    </AppShell>
   );
 }
 
