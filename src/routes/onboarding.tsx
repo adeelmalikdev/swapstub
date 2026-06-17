@@ -2,6 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { markProfileOnboarded } from "@/lib/profile.functions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -17,6 +19,7 @@ export const Route = createFileRoute("/onboarding")({
 function OnboardingPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState<string | null>(null);
+  const [completing, setCompleting] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -46,8 +49,25 @@ function OnboardingPage() {
           full flow (profile, skills, interests) is coming soon.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-          <Button asChild>
-            <Link to="/">Continue to home</Link>
+          <Button
+            disabled={completing}
+            onClick={async () => {
+              setCompleting(true);
+              try {
+                await markProfileOnboarded();
+                toast.success("Profile marked complete");
+                navigate({ to: "/dashboard", replace: true });
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Couldn't update profile");
+              } finally {
+                setCompleting(false);
+              }
+            }}
+          >
+            {completing ? "Finishing…" : "Mark complete & continue"}
+          </Button>
+          <Button asChild variant="ghost">
+            <Link to="/">Back to home</Link>
           </Button>
           <Button
             variant="outline"
