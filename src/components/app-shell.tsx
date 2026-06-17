@@ -1,7 +1,9 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { LogOut, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { NotificationsBell } from "@/components/notifications-bell";
 
 const NAV = [
   { label: "Dashboard", to: "/dashboard" },
@@ -9,11 +11,10 @@ const NAV = [
   { label: "Listings", to: "/listings" },
   { label: "Bookings", to: "/bookings" },
   { label: "Messages", to: "/messages" },
-  { label: "Profile", to: "/dashboard" },
+  { label: "Settings", to: "/settings" },
 ] as const;
 
 function isActive(pathname: string, to: string, label: string) {
-  if (to === "/dashboard" && label !== "Dashboard") return false;
   if (to === "/dashboard") return pathname === "/dashboard";
   if (to === "/listings")
     return pathname === "/listings" || pathname.startsWith("/listings/");
@@ -29,6 +30,21 @@ export function AppShell({
 }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (mounted) setUserId(data.user?.id ?? null);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (mounted) setUserId(session?.user?.id ?? null);
+    });
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   const onSignOut = async () => {
     await supabase.auth.signOut();
@@ -67,9 +83,12 @@ export function AppShell({
               );
             })}
           </ul>
-          <Button variant="ghost" size="sm" onClick={onSignOut}>
-            <LogOut className="h-4 w-4 mr-1.5" /> Sign out
-          </Button>
+          <div className="flex items-center gap-1">
+            {userId && <NotificationsBell userId={userId} />}
+            <Button variant="ghost" size="sm" onClick={onSignOut}>
+              <LogOut className="h-4 w-4 mr-1.5" /> Sign out
+            </Button>
+          </div>
         </div>
         {/* Mobile nav */}
         <div className="md:hidden border-t border-border bg-card/60 overflow-x-auto">
