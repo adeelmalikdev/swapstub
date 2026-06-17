@@ -84,6 +84,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "Teach what you know. Learn what you want. SwapStub is the torn-ticket marketplace for student skill swaps." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "SwapStub — Trade skills with other students" },
+      { name: "twitter:description", content: "Teach what you know. Learn what you want. SwapStub is the torn-ticket marketplace for student skill swaps." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e46d24e1-f791-49e4-8208-d99c2f1e2a9a/id-preview-20229526--43026bc6-f0fd-4277-a4af-15a0617e682f.lovable.app-1781694827834.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e46d24e1-f791-49e4-8208-d99c2f1e2a9a/id-preview-20229526--43026bc6-f0fd-4277-a4af-15a0617e682f.lovable.app-1781694827834.png" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
