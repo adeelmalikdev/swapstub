@@ -14,7 +14,6 @@ import {
   InputOTPSlot,
   InputOTPSeparator,
 } from "@/components/ui/input-otp";
-import { TicketStub } from "@/components/ticket/TicketStub";
 import { PerforatedDivider } from "@/components/ticket/PerforatedDivider";
 
 type Mode = "signin" | "signup" | "verify-signup" | "forgot" | "verify-reset" | "new-password";
@@ -264,8 +263,12 @@ function AuthPage() {
 
       <main className="mx-auto flex max-w-6xl flex-col items-center px-4 py-10 sm:px-6 sm:py-16">
         <div className="w-full max-w-md">
-          <TicketStub orientation="vertical" leftLabel="Auth" rightLabel="Stub">
-            <div className="space-y-1 p-6 sm:p-8">
+          <div className="relative overflow-hidden rounded-md border-2 border-ink bg-[var(--kraft)] ticket-shadow paper-grain">
+            <div className="absolute inset-x-0 top-0 h-2 bg-[var(--ochre)] border-b-2 border-ink" aria-hidden />
+            <div className="absolute right-3 top-4 z-10 rounded bg-ink/85 px-1.5 py-0.5 font-mono text-[10px] tracking-wider text-kraft">
+              STUB-AUTH
+            </div>
+            <div className="space-y-1 px-6 pt-10 pb-6 sm:px-8">
               <h1 className="font-display text-2xl text-ink sm:text-3xl">{title}</h1>
               <p className="text-sm text-ink/70">{subtitle}</p>
             </div>
@@ -372,7 +375,7 @@ function AuthPage() {
                 </form>
               )}
             </div>
-          </TicketStub>
+          </div>
 
           <p className="mt-6 text-center text-xs text-ink/60">
             By continuing you agree to the SwapStub house rules.
