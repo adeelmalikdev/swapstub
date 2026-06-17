@@ -36,6 +36,26 @@ export const getPublicProfile = createServerFn({ method: "POST" })
     if (lErr) throw new Error(lErr.message);
     const listings = rows ?? [];
 
+    const { data: reviewRows } = await supabase
+      .from("reviews")
+      .select("id, rating, body, reviewer_id, created_at")
+      .eq("reviewee_id", profile.id)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    const reviews = reviewRows ?? [];
+    const reviewerIds = Array.from(new Set(reviews.map((r) => r.reviewer_id)));
+    const { data: reviewerProfiles } = reviewerIds.length
+      ? await supabase
+          .from("profiles")
+          .select("id, username, display_name, avatar_url")
+          .in("id", reviewerIds)
+      : { data: [] as { id: string; username: string | null; display_name: string | null; avatar_url: string | null }[] };
+    const rpm = new Map((reviewerProfiles ?? []).map((p) => [p.id, p]));
+    const avg =
+      reviews.length === 0
+        ? null
+        : reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+
     const categoryIds = Array.from(
       new Set(
         listings
@@ -74,6 +94,17 @@ export const getPublicProfile = createServerFn({ method: "POST" })
         offeredCategory: l.offered_category_id ? cm.get(l.offered_category_id) ?? null : null,
         wantedCategory: l.wanted_category_id ? cm.get(l.wanted_category_id) ?? null : null,
       })),
+      reviews: {
+        count: reviews.length,
+        average: avg,
+        items: reviews.map((r) => ({
+          id: r.id,
+          rating: r.rating,
+          body: r.body,
+          createdAt: r.created_at,
+          reviewer: rpm.get(r.reviewer_id) ?? null,
+        })),
+      },
     };
   });
 
