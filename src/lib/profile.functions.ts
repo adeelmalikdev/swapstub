@@ -1,6 +1,81 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { z } from "zod";
+
+export const getPublicProfile = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z.object({ username: z.string().trim().min(1).max(64) }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const supabase = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+      { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
+    );
+    const uname = data.username.toLowerCase();
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select(
+        "id, username, display_name, bio, avatar_url, timezone, teach_skills, learn_skills, available_days, session_length_min, created_at",
+      )
+      .eq("username", uname)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!profile) return null;
+
+    const { data: rows, error: lErr } = await supabase
+      .from("listings")
+      .select(
+        "id, ticket_code, offered_skill, wanted_skill, offered_category_id, wanted_category_id, description, availability, created_at",
+      )
+      .eq("user_id", profile.id)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+    if (lErr) throw new Error(lErr.message);
+    const listings = rows ?? [];
+
+    const categoryIds = Array.from(
+      new Set(
+        listings
+          .flatMap((l) => [l.offered_category_id, l.wanted_category_id])
+          .filter((v): v is string => Boolean(v)),
+      ),
+    );
+    const { data: cats } = categoryIds.length
+      ? await supabase.from("categories").select("id, name, slug").in("id", categoryIds)
+      : { data: [] as { id: string; name: string; slug: string }[] };
+    const cm = new Map((cats ?? []).map((c) => [c.id, c]));
+
+    return {
+      profile: {
+        id: profile.id,
+        username: profile.username,
+        displayName: profile.display_name,
+        bio: profile.bio,
+        avatarUrl: profile.avatar_url,
+        timezone: profile.timezone,
+        teachSkills: profile.teach_skills ?? [],
+        learnSkills: profile.learn_skills ?? [],
+        availableDays: profile.available_days ?? [],
+        sessionLengthMin: profile.session_length_min,
+        joinedAt: profile.created_at,
+      },
+      listings: listings.map((l) => ({
+        id: l.id,
+        ticketCode: l.ticket_code,
+        offeredSkill: l.offered_skill,
+        wantedSkill: l.wanted_skill,
+        description: l.description,
+        availability:
+          (l.availability as { days?: string[]; sessionLengthMin?: number | null } | null) ?? null,
+        createdAt: l.created_at,
+        offeredCategory: l.offered_category_id ? cm.get(l.offered_category_id) ?? null : null,
+        wantedCategory: l.wanted_category_id ? cm.get(l.wanted_category_id) ?? null : null,
+      })),
+    };
+  });
 
 export const getPostAuthDestination = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
