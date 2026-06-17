@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ListingsIndexRouteImport } from './routes/listings.index'
 import { Route as ListingsNewRouteImport } from './routes/listings.new'
 import { Route as ListingsIdRouteImport } from './routes/listings.$id'
+import { Route as UUsernameRouteImport } from './routes/u.$username'
 
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
@@ -70,6 +71,11 @@ const ListingsIdRoute = ListingsIdRouteImport.update({
   path: '/listings/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UUsernameRoute = UUsernameRouteImport.update({
+  id: '/u/$username',
+  path: '/u/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/listings/$id': typeof ListingsIdRoute
   '/listings/new': typeof ListingsNewRoute
   '/listings/': typeof ListingsIndexRoute
+  '/u/$username': typeof UUsernameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/listings/$id': typeof ListingsIdRoute
   '/listings/new': typeof ListingsNewRoute
   '/listings': typeof ListingsIndexRoute
+  '/u/$username': typeof UUsernameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/listings/$id': typeof ListingsIdRoute
   '/listings/new': typeof ListingsNewRoute
   '/listings/': typeof ListingsIndexRoute
+  '/u/$username': typeof UUsernameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/listings/$id'
     | '/listings/new'
     | '/listings/'
+    | '/u/$username'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/listings/$id'
     | '/listings/new'
     | '/listings'
+    | '/u/$username'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/listings/$id'
     | '/listings/new'
     | '/listings/'
+    | '/u/$username'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +170,7 @@ export interface RootRouteChildren {
   ListingsIdRoute: typeof ListingsIdRoute
   ListingsNewRoute: typeof ListingsNewRoute
   ListingsIndexRoute: typeof ListingsIndexRoute
+  UUsernameRoute: typeof UUsernameRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListingsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/u/$username': {
+      id: '/u/$username'
+      path: '/u/$username'
+      fullPath: '/u/$username'
+      preLoaderRoute: typeof UUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,6 +266,7 @@ const rootRouteChildren: RootRouteChildren = {
   ListingsIdRoute: ListingsIdRoute,
   ListingsNewRoute: ListingsNewRoute,
   ListingsIndexRoute: ListingsIndexRoute,
+  UUsernameRoute: UUsernameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
