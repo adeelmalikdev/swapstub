@@ -173,15 +173,27 @@ function AuthPage() {
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
+    const firstRes = nameSchema.safeParse(firstName);
+    if (!firstRes.success) return toast.error(`First name: ${firstRes.error.issues[0].message}`);
+    const lastRes = nameSchema.safeParse(lastName);
+    if (!lastRes.success) return toast.error(`Last name: ${lastRes.error.issues[0].message}`);
     const emailRes = emailSchema.safeParse(email);
     if (!emailRes.success) return toast.error(emailRes.error.issues[0].message);
     const passRes = passwordSchema.safeParse(password);
     if (!passRes.success) return toast.error(passRes.error.issues[0].message);
+    if (password !== confirmPassword) return toast.error("Passwords don't match");
     setLoading(true);
     const { error } = await supabase.auth.signUp({
       email: emailRes.data,
       password: passRes.data,
-      options: { emailRedirectTo: `${window.location.origin}/` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          first_name: firstRes.data,
+          last_name: lastRes.data,
+          display_name: `${firstRes.data} ${lastRes.data}`,
+        },
+      },
     });
     setLoading(false);
     if (error) return toast.error(error.message);
@@ -242,6 +254,7 @@ function AuthPage() {
     e.preventDefault();
     const passRes = passwordSchema.safeParse(newPassword);
     if (!passRes.success) return toast.error(passRes.error.issues[0].message);
+    if (newPassword !== confirmNewPassword) return toast.error("Passwords don't match");
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password: passRes.data });
     setLoading(false);
