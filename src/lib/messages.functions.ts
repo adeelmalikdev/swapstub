@@ -180,7 +180,7 @@ export const sendMessage = createServerFn({ method: "POST" })
         .eq("id", userId)
         .maybeSingle();
       const { notifyNewMessage } = await import("./notify.server");
-      void notifyNewMessage({
+      await notifyNewMessage({
         recipientUserId: otherId,
         senderName: me?.display_name || me?.username || "Someone",
         preview: data.body,
