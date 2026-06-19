@@ -1,52 +1,28 @@
+## Problem
 
-# One Significant Function for the Exam Answer
+In-app notifications and emails never fire. Verified: the `notifications` table has 0 rows, even though the message/booking/review flows have been used. Cause: each call site fires the notification with `void notify...(...)` and immediately returns from the handler. On the serverless Worker runtime, returning from the handler terminates pending async work — the `INSERT` into `notifications` and the Resend `fetch` are killed before they run.
 
-Instead of the big `proposeSwap` (too long to hand-write), I'll showcase **`has_role`** — the Postgres SECURITY DEFINER function that powers role-based access control across the app. It's ~10 lines, easy to reproduce on paper, and technically meaningful (prevents RLS recursion + privilege escalation).
+Affected sites:
+- `src/lib/messages.functions.ts` → `sendMessage` (line 183)
+- `src/lib/bookings.functions.ts` → booking event notify (line 156)
+- `src/lib/reviews.functions.ts` → review notify (line 40)
 
-## What the answer will contain
+## Fix
 
-1. **2-line project intro** — SwapStub: peer-to-peer student skill-swap marketplace built on TanStack Start + Lovable Cloud (Postgres + RLS + Auth).
+1. **Await all notify calls** instead of `void`-ing them. Keep them inside the existing `try/catch` so a notify/email failure still doesn't fail the user's action (message send, booking change, review submit). This guarantees the DB insert + Resend POST complete before the Worker returns.
 
-2. **The code block** (short enough to memorize):
+2. **Tighten `notify.server.ts`** so email errors don't break in-app notifications:
+   - Wrap each step (`createNotification`, `getRecipient`, `sendEmail`) so a failure in one is logged but doesn't throw past the caller.
 
-```sql
-create or replace function public.has_role(
-  _user_id uuid,
-  _role app_role
-) returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1 from public.user_roles
-    where user_id = _user_id and role = _role
-  )
-$$;
-```
+3. **Sanity check the email path**:
+   - `RESEND_API_KEY` and `LOVABLE_API_KEY` are present (confirmed in secrets).
+   - The `FROM` address is `onboarding@resend.dev` — fine for testing, but Resend will only deliver to the verified account owner's email until a custom domain is set up. Note this in the closing message so the user isn't surprised when emails to other addresses don't arrive.
 
-Plus the one-line usage inside an RLS policy:
-```sql
-create policy "Admins read all"
-on public.listings for select
-to authenticated
-using (public.has_role(auth.uid(), 'admin'));
-```
+4. **No schema changes**, no new files, no UI changes — just await three call sites and harden one helper file.
 
-3. **Explanation (4 short points)** — exactly what to write under the code:
-   - **Separate `user_roles` table** prevents privilege escalation (roles never live on `profiles`, which the user can update).
-   - **`SECURITY DEFINER`** runs with the function owner's rights → bypasses RLS on `user_roles`, avoiding infinite recursion when policies on other tables call it.
-   - **`stable` + `set search_path = public`** → query planner can cache results within a statement, and a fixed search_path blocks search-path hijack attacks.
-   - **Reusable across every policy** → single source of truth for authorization; used by listings, bookings, admin endpoints.
+## Verification
 
-## Why this one (vs alternatives)
-
-| Candidate | Lines | Exam-friendly? | Significance |
-|---|---|---|---|
-| `proposeSwap` | ~60 | No | High but unrealistic to write |
-| `sendMessage` + realtime | ~40 | Borderline | Medium |
-| **`has_role` + RLS policy** | **~12** | **Yes** | **High — security architecture** |
-| `requireSupabaseAuth` middleware | ~20 | Maybe | Medium |
-
-If you'd rather feature a **TypeScript** server function instead of SQL, I can swap in a trimmed ~15-line version of `submitReview` (validates rating, inserts, updates listing avg) — tell me which flavor you want.
+After the edit:
+- Send a test message → check `select count(*) from notifications` returns ≥1.
+- Confirm the bell in the app shell shows an unread badge.
+- Check server-function logs for any `[email] send failed` lines if the email doesn't arrive (likely Resend sandbox restriction, not a code bug).
