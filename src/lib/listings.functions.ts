@@ -151,7 +151,7 @@ export const proposeSwap = createServerFn({ method: "POST" })
         .maybeSingle();
       const senderName = me?.display_name || me?.username || "Someone";
       const { notifyBookingEvent } = await import("./notify.server");
-      void notifyBookingEvent({
+      await notifyBookingEvent({
         recipientUserId: listing.user_id,
         kind: "booking_proposed",
         title: `${senderName} proposed a swap`,

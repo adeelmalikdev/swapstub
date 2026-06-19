@@ -153,7 +153,7 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
         completed: "booking_completed",
       } as const;
       const { notifyBookingEvent } = await import("./notify.server");
-      void notifyBookingEvent({
+      await notifyBookingEvent({
         recipientUserId: otherId,
         kind: kindMap[nextStatus as keyof typeof kindMap],
         title: titles[nextStatus as keyof typeof titles],

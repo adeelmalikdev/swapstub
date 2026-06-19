@@ -37,7 +37,7 @@ export const submitReview = createServerFn({ method: "POST" })
         .eq("id", userId)
         .maybeSingle();
       const { notifyReview } = await import("./notify.server");
-      void notifyReview({
+      await notifyReview({
         recipientUserId: data.revieweeId,
         reviewerName: me?.display_name || me?.username || "Someone",
         rating: data.rating,
